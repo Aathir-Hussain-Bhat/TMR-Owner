@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMR - Workshop Tracker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome (v6 for X-Twitter logo) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        ::-webkit-scrollbar { display: none; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 pb-24">
+
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mb-4 shadow-lg animate-bounce">
+            <i class="fas fa-motorcycle text-white text-3xl"></i>
+        </div>
+        <h1 class="text-4xl font-extrabold tracking-tight text-gray-900">TMR</h1>
+        <p id="splash-workshop-name" class="text-xs font-bold text-gray-400 tracking-[0.2em] uppercase mt-2">Loading...</p>
+        <div class="mt-10 w-6 h-6 border-2 border-gray-100 border-t-black rounded-full animate-spin"></div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10 px-5 py-4 flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-bold tracking-tight">TMR</h1>
+            <p id="header-workshop-name" class="text-xs text-gray-500">Bhat Network</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <!-- Creator Icon -->
+            <button onclick="openCreatorWall()" class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition text-gray-600 hover:text-black shadow-sm">
+                <i class="fas fa-code text-sm"></i>
+            </button>
+            <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center shadow-sm">
+                <i class="fas fa-bell text-gray-500 text-sm"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- OVERLAY: CREATOR WALL -->
+    <div id="creator-wall-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl w-11/12 max-w-sm p-6 relative transform scale-95 transition-transform duration-300 shadow-2xl" id="creator-wall-content">
+            <button onclick="closeCreatorWall()" class="absolute top-4 right-4 w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-500 hover:text-black hover:bg-gray-100 transition">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="text-center mb-6 mt-2">
+                <div class="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-lg border-4 border-gray-100">
+                    <i class="fas fa-user-ninja"></i>
+                </div>
+                <h2 class="text-2xl font-black tracking-tight text-gray-900">BHAT BOYKA</h2>
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Creator & Developer</p>
+            </div>
+            
+            <div class="space-y-3">
+                <a href="https://youtube.com/@aathir_hussain_bhat.?si=28tBVXAnqc0qJfAQ" target="_blank" class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-red-50 hover:text-red-600 transition group border border-transparent hover:border-red-100">
+                    <i class="fab fa-youtube text-xl text-gray-400 group-hover:text-red-600 w-6 text-center"></i>
+                    <span class="font-bold text-sm text-gray-700 group-hover:text-red-600">YouTube</span>
+                </a>
+                <a href="https://share.google/05cqDTY08eQEp74MH" target="_blank" class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-pink-50 hover:text-pink-600 transition group border border-transparent hover:border-pink-100">
+                    <i class="fab fa-instagram text-xl text-gray-400 group-hover:text-pink-600 w-6 text-center"></i>
+                    <span class="font-bold text-sm text-gray-700 group-hover:text-pink-600">Instagram</span>
+                </a>
+                <a href="https://share.google/jWLCjCdUvzcd360cx" target="_blank" class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition group border border-transparent hover:border-blue-100">
+                    <i class="fab fa-facebook text-xl text-gray-400 group-hover:text-blue-600 w-6 text-center"></i>
+                    <span class="font-bold text-sm text-gray-700 group-hover:text-blue-600">Facebook</span>
+                </a>
+                <a href="https://x.com/bhatboyka" target="_blank" class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-gray-200 transition group border border-transparent hover:border-gray-300">
+                    <i class="fab fa-x-twitter text-xl text-gray-400 group-hover:text-black w-6 text-center"></i>
+                    <span class="font-bold text-sm text-gray-700 group-hover:text-black">X (Twitter)</span>
+                </a>
+                <a href="https://github.com/Aathir-Hussain-Bhat" target="_blank" class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-gray-200 transition group border border-transparent hover:border-gray-300">
+                    <i class="fab fa-github text-xl text-gray-400 group-hover:text-black w-6 text-center"></i>
+                    <span class="font-bold text-sm text-gray-700 group-hover:text-black">GitHub</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY: SERVICE DETAILS (Click from Recent Services) -->
+    <div id="service-details-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <!-- Bottom sheet on mobile, centered modal on desktop -->
+        <div class="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:w-11/12 sm:max-w-md p-6 relative transform translate-y-full sm:translate-y-0 sm:scale-95 transition-all duration-300 shadow-2xl" id="service-details-content">
+            <!-- Mobile pull-indicator -->
+            <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-5 sm:hidden"></div>
+            
+            <button onclick="closeServiceDetails()" class="absolute top-5 right-5 w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-500 hover:text-black transition">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <h2 class="text-lg font-extrabold mb-5 text-gray-900 border-b border-gray-100 pb-4">Service Details</h2>
+            
+            <!-- Injected by JS -->
+            <div id="sd-content" class="space-y-4"></div>
+            
+            <div class="mt-6 pt-4 border-t border-gray-100">
+                 <button id="sd-whatsapp-btn" class="w-full bg-[#25D366] text-white font-bold rounded-lg py-3.5 flex items-center justify-center gap-2 hover:bg-[#1ebe57] shadow-sm transition">
+                    <i class="fab fa-whatsapp text-lg"></i> Send Receipt via WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEWS -->
+    <main class="p-4">
+        
+        <!-- 1. DASHBOARD -->
+        <div id="view-dashboard" class="view-section">
+            <h2 class="text-lg font-semibold mb-4">Dashboard</h2>
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                    <p class="text-sm text-gray-500">Total Services</p>
+                    <p class="text-2xl font-bold" id="stat-total-services">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                    <p class="text-sm text-gray-500">Revenue</p>
+                    <p class="text-2xl font-bold" id="stat-revenue">₹0</p>
+                </div>
+            </div>
+
+            <h3 class="text-md font-semibold mb-3">Recent Services</h3>
+            <div id="recent-list" class="space-y-3"></div>
+        </div>
+
+        <!-- 2. ADD SERVICE -->
+        <div id="view-add" class="view-section hidden">
+            <h2 class="text-lg font-semibold mb-4">New Service Entry</h2>
+            
+            <form id="serviceForm" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-gray-600">Customer Name</label>
+                    <input type="text" id="customerName" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-gray-600">WhatsApp Number</label>
+                    <input type="number" id="customerPhone" required placeholder="9906 XXXX XX" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-600">Bike Model</label>
+                        <input type="text" id="bikeModel" required placeholder="Splendor" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-600">Number Plate</label>
+                        <input type="text" id="numberPlate" required placeholder="JK01..." class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black uppercase">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-600">Current KM</label>
+                        <input type="number" id="currentKm" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-600">Total Cost (₹)</label>
+                        <input type="number" id="cost" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-gray-600">Work Done</label>
+                    <textarea id="workDone" rows="3" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black"></textarea>
+                </div>
+                <div class="space-y-2 mb-4">
+                    <label class="text-sm font-semibold text-gray-600">Next Service At (KM)</label>
+                    <input type="number" id="nextKm" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+                </div>
+                <button type="submit" class="w-full bg-black text-white font-semibold rounded-lg py-3 shadow-md hover:bg-gray-800 transition">
+                    Save & WhatsApp
+                </button>
+            </form>
+        </div>
+
+        <!-- 2.5 EDIT SERVICE -->
+        <div id="view-edit" class="view-section hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold">Edit Service</h2>
+                <button onclick="switchView('history')" class="text-sm font-bold text-gray-500">Cancel</button>
+            </div>
+            
+            <form id="editForm" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+                <input type="hidden" id="edit-id">
+                <input type="hidden" id="edit-date">
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-gray-600">Customer Name</label>
+                    <input type="text" id="edit-customerName" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-gray-600">WhatsApp Number</label>
+                    <input type="number" id="edit-customerPhone" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-600">Bike Model</label>
+                        <input type="text" id="edit-bikeModel" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-600">Number Plate</label>
+                        <input type="text" id="edit-numberPlate" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black uppercase">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-600">Current KM</label>
+                        <input type="number" id="edit-currentKm" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-600">Total Cost (₹)</label>
+                        <input type="number" id="edit-cost" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-gray-600">Work Done</label>
+                    <textarea id="edit-workDone" rows="3" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black"></textarea>
+                </div>
+                <div class="space-y-2 mb-4">
+                    <label class="text-sm font-semibold text-gray-600">Next Service At (KM)</label>
+                    <input type="number" id="edit-nextKm" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+                </div>
+                <button type="submit" class="w-full bg-black text-white font-semibold rounded-lg py-3 shadow-md hover:bg-gray-800 transition">
+                    Update Service
+                </button>
+                <button type="button" onclick="deleteEditingRecord()" class="w-full bg-red-50 text-red-600 font-semibold rounded-lg py-3 mt-2 hover:bg-red-100 transition">
+                    Delete Record
+                </button>
+            </form>
+        </div>
+
+        <!-- 3. HISTORY VIEW -->
+        <div id="view-history" class="view-section hidden">
+            <h2 class="text-lg font-semibold mb-4">Service Timeline</h2>
+            <input type="text" id="searchPlate" placeholder="Search Plate or Phone..." onkeyup="filterHistory()" class="w-full bg-white shadow-sm border border-gray-100 rounded-lg px-4 py-3 outline-none focus:border-black mb-6 uppercase">
+            <div class="relative border-l-2 border-gray-200 ml-3 space-y-6" id="history-list"></div>
+        </div>
+
+        <!-- 4. CUSTOMERS VIEW -->
+        <div id="view-customers" class="view-section hidden">
+            <h2 class="text-lg font-semibold mb-4">Customer Directory</h2>
+            <input type="text" id="searchCustomer" placeholder="Search Name or Bike..." onkeyup="renderCustomers()" class="w-full bg-white shadow-sm border border-gray-100 rounded-lg px-4 py-3 outline-none focus:border-black mb-6">
+            <div class="space-y-3" id="customers-list"></div>
+        </div>
+
+        <!-- 5. OWNER VIEW -->
+        <div id="view-owner" class="view-section hidden">
+            <h2 class="text-lg font-semibold mb-4">Workshop Settings</h2>
+
+            <form id="ownerForm" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 space-y-4">
+                <div class="flex items-center gap-4 mb-2">
+                    <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-xl">🧑‍🔧</div>
+                    <div class="flex-1">
+                        <input type="text" id="set-workshopName" placeholder="Workshop Name" required class="font-bold text-gray-900 w-full outline-none bg-transparent border-b border-gray-200 focus:border-black pb-1">
+                        <input type="text" id="set-adminName" placeholder="Admin Name" required class="text-xs text-gray-500 w-full outline-none bg-transparent border-b border-gray-200 focus:border-black pb-1 mt-1">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-black text-white text-sm font-semibold rounded-lg py-2">Save Profile Details</button>
+            </form>
+
+            <h3 class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wider">Data Management</h3>
+            
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
+                <button onclick="exportData()" class="w-full bg-gray-100 text-black font-semibold rounded-lg py-3 flex items-center justify-center gap-2 hover:bg-gray-200">
+                    <i class="fas fa-file-export"></i> Backup (Export Data)
+                </button>
+                <div class="relative">
+                    <input type="file" id="importFile" accept=".json" onchange="importData(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                    <button class="w-full bg-gray-100 text-black font-semibold rounded-lg py-3 flex items-center justify-center gap-2 hover:bg-gray-200 pointer-events-none">
+                        <i class="fas fa-file-import"></i> Restore (Import Data)
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <button onclick="clearData()" class="w-full bg-red-50 text-red-600 font-semibold rounded-lg py-3 flex items-center justify-center gap-2 hover:bg-red-100">
+                    <i class="fas fa-trash-alt"></i> Delete All App Data
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- BOTTOM NAVIGATION -->
+    <nav class="fixed bottom-0 w-full bg-white border-t border-gray-200 flex py-2 px-1 pb-safe z-10 text-gray-400">
+        <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn flex-1 flex flex-col items-center py-1 text-black">
+            <i class="fas fa-home text-lg mb-1"></i>
+            <span class="text-[9px] font-semibold">Home</span>
+        </button>
+        <button onclick="switchView('add')" id="nav-add" class="nav-btn flex-1 flex flex-col items-center py-1">
+            <i class="fas fa-plus-circle text-lg mb-1"></i>
+            <span class="text-[9px] font-semibold">Add</span>
+        </button>
+        <button onclick="switchView('history')" id="nav-history" class="nav-btn flex-1 flex flex-col items-center py-1">
+            <i class="fas fa-history text-lg mb-1"></i>
+            <span class="text-[9px] font-semibold">History</span>
+        </button>
+        <button onclick="switchView('customers')" id="nav-customers" class="nav-btn flex-1 flex flex-col items-center py-1">
+            <i class="fas fa-users text-lg mb-1"></i>
+            <span class="text-[9px] font-semibold">Clients</span>
+        </button>
+        <button onclick="switchView('owner')" id="nav-owner" class="nav-btn flex-1 flex flex-col items-center py-1">
+            <i class="fas fa-store text-lg mb-1"></i>
+            <span class="text-[9px] font-semibold">Owner</span>
+        </button>
+    </nav>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // 1. Data Initialization
+        let services = JSON.parse(localStorage.getItem('tmr_services')) ||[];
+        let ownerData = JSON.parse(localStorage.getItem('tmr_owner')) || {
+            workshopName: "Bhat Network",
+            adminName: "Administrator"
+        };
+
+        function initApp() {
+            document.getElementById('header-workshop-name').innerText = ownerData.workshopName;
+            document.getElementById('splash-workshop-name').innerText = ownerData.workshopName;
+            document.getElementById('set-workshopName').value = ownerData.workshopName;
+            document.getElementById('set-adminName').value = ownerData.adminName;
+        }
+        initApp();
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const splash = document.getElementById('splash-screen');
+                splash.classList.add('opacity-0');
+                setTimeout(() => splash.classList.add('hidden'), 500);
+            }, 1200);
+        });
+
+        // Overlay Modals logic
+        function openCreatorWall() {
+            const overlay = document.getElementById('creator-wall-overlay');
+            const content = document.getElementById('creator-wall-content');
+            overlay.classList.remove('hidden');
+            void overlay.offsetWidth; // trigger reflow
+            overlay.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+        }
+
+        function closeCreatorWall() {
+            const overlay = document.getElementById('creator-wall-overlay');
+            const content = document.getElementById('creator-wall-content');
+            overlay.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        function openServiceDetails(id) {
+            const record = services.find(r => r.id === id);
+            if(!record) return;
+
+            document.getElementById('sd-content').innerHTML = `
+                <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+                    <div>
+                        <p class="text-xs text-gray-500 font-medium">Service Date</p>
+                        <p class="font-bold text-gray-800">${record.date}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-gray-500 font-medium">Total Cost</p>
+                        <p class="font-black text-xl text-gray-900">₹${record.cost}</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 border-b border-gray-100 py-3">
+                    <div>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Customer</p>
+                        <p class="font-bold text-sm text-gray-800">${record.customerName}</p>
+                        <p class="text-xs text-gray-500">${record.customerPhone}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Vehicle</p>
+                        <p class="font-bold text-sm text-gray-800">${record.numberPlate}</p>
+                        <p class="text-xs text-gray-500">${record.bikeModel}</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 border-b border-gray-100 py-3">
+                    <div>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Current KM</p>
+                        <p class="font-bold text-sm text-gray-800">${record.currentKm} KM</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-red-400 font-bold uppercase tracking-wide">Next Service At</p>
+                        <p class="font-bold text-sm text-red-600">${record.nextKm} KM</p>
+                    </div>
+                </div>
+                <div class="pt-2">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-2">Work Done</p>
+                    <p class="bg-gray-50 p-3 rounded-xl text-sm text-gray-700 leading-relaxed border border-gray-100 shadow-inner">${record.workDone}</p>
+                </div>
+            `;
+            
+            document.getElementById('sd-whatsapp-btn').onclick = () => sendWhatsApp(record);
+
+            const overlay = document.getElementById('service-details-overlay');
+            const content = document.getElementById('service-details-content');
+            overlay.classList.remove('hidden');
+            void overlay.offsetWidth;
+            overlay.classList.remove('opacity-0');
+            content.classList.remove('translate-y-full');
+            content.classList.remove('scale-95');
+        }
+
+        function closeServiceDetails() {
+            const overlay = document.getElementById('service-details-overlay');
+            const content = document.getElementById('service-details-content');
+            overlay.classList.add('opacity-0');
+            content.classList.add('translate-y-full');
+            content.classList.add('scale-95');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        // 2. View Navigation
+        function switchView(viewName) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('text-black');
+                el.classList.add('text-gray-400');
+            });
+
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+            
+            if(viewName !== 'edit') {
+                document.getElementById(`nav-${viewName}`).classList.add('text-black');
+                document.getElementById(`nav-${viewName}`).classList.remove('text-gray-400');
+            }
+
+            if(viewName === 'dashboard') renderDashboard();
+            if(viewName === 'history') renderHistory();
+            if(viewName === 'customers') renderCustomers();
+        }
+
+        // 3. Add Service
+        document.getElementById('serviceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const record = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString('en-IN'),
+                customerName: document.getElementById('customerName').value,
+                customerPhone: document.getElementById('customerPhone').value,
+                bikeModel: document.getElementById('bikeModel').value,
+                numberPlate: document.getElementById('numberPlate').value.toUpperCase(),
+                currentKm: document.getElementById('currentKm').value,
+                cost: document.getElementById('cost').value,
+                workDone: document.getElementById('workDone').value,
+                nextKm: document.getElementById('nextKm').value
+            };
+
+            services.unshift(record);
+            saveData();
+            sendWhatsApp(record);
+            this.reset();
+            switchView('dashboard');
+        });
+
+        // 4. Update Owner Data
+        document.getElementById('ownerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            ownerData.workshopName = document.getElementById('set-workshopName').value;
+            ownerData.adminName = document.getElementById('set-adminName').value;
+            localStorage.setItem('tmr_owner', JSON.stringify(ownerData));
+            initApp();
+            alert("Workshop profile updated successfully!");
+        });
+
+        // 5. WhatsApp Generators
+        function sendWhatsApp(record) {
+            const message = `*TMR - ${ownerData.workshopName}*\n\nHello ${record.customerName},\nYour ${record.bikeModel} (${record.numberPlate}) service is complete.\n\n*Service Details:*\n📅 Date: ${record.date}\n🛣️ KM Reading: ${record.currentKm} KM\n🔧 Work Done: ${record.workDone}\n💰 Total Cost: ₹${record.cost}\n\n⚠️ *Reminder:* Next service due at *${record.nextKm} KM*.\n\nDrive safe!`;
+            const encodedMessage = encodeURIComponent(message);
+            window.open(`https://wa.me/91${record.customerPhone}?text=${encodedMessage}`, '_blank');
+        }
+
+        function quickWhatsApp(phone, name) {
+            const message = `Hello ${name}, this is ${ownerData.adminName} from ${ownerData.workshopName}.`;
+            window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(message)}`, '_blank');
+        }
+
+        // 6. EDIT & DELETE Logic
+        function editRecord(id) {
+            const record = services.find(r => r.id === id);
+            if(!record) return;
+
+            document.getElementById('edit-id').value = record.id;
+            document.getElementById('edit-date').value = record.date;
+            document.getElementById('edit-customerName').value = record.customerName;
+            document.getElementById('edit-customerPhone').value = record.customerPhone;
+            document.getElementById('edit-bikeModel').value = record.bikeModel;
+            document.getElementById('edit-numberPlate').value = record.numberPlate;
+            document.getElementById('edit-currentKm').value = record.currentKm;
+            document.getElementById('edit-cost').value = record.cost;
+            document.getElementById('edit-workDone').value = record.workDone;
+            document.getElementById('edit-nextKm').value = record.nextKm;
+
+            switchView('edit');
+        }
+
+        document.getElementById('editForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('edit-id').value);
+            const index = services.findIndex(r => r.id === id);
+            
+            if(index !== -1) {
+                services[index] = {
+                    id: id,
+                    date: document.getElementById('edit-date').value,
+                    customerName: document.getElementById('edit-customerName').value,
+                    customerPhone: document.getElementById('edit-customerPhone').value,
+                    bikeModel: document.getElementById('edit-bikeModel').value,
+                    numberPlate: document.getElementById('edit-numberPlate').value.toUpperCase(),
+                    currentKm: document.getElementById('edit-currentKm').value,
+                    cost: document.getElementById('edit-cost').value,
+                    workDone: document.getElementById('edit-workDone').value,
+                    nextKm: document.getElementById('edit-nextKm').value
+                };
+                saveData();
+                alert("Service updated!");
+                switchView('history');
+            }
+        });
+
+        function deleteEditingRecord() {
+            if(confirm("Are you sure you want to delete this specific service record? This cannot be undone.")) {
+                const id = parseInt(document.getElementById('edit-id').value);
+                services = services.filter(r => r.id !== id);
+                saveData();
+                switchView('history');
+            }
+        }
+
+        // 7. RENDERING FUNCTIONS
+        function renderDashboard() {
+            document.getElementById('stat-total-services').innerText = services.length;
+            const totalRev = services.reduce((sum, record) => sum + Number(record.cost), 0);
+            document.getElementById('stat-revenue').innerText = `₹${totalRev}`;
+
+            const recentList = document.getElementById('recent-list');
+            recentList.innerHTML = '';
+            const recentServices = services.slice(0, 3);
+            
+            if (recentServices.length === 0) {
+                recentList.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">No services yet.</p>`;
+                return;
+            }
+
+            recentServices.forEach(record => {
+                recentList.innerHTML += `
+                    <div onclick="openServiceDetails(${record.id})" class="cursor-pointer bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center hover:shadow-md hover:border-gray-200 transition-all group">
+                        <div>
+                            <p class="font-bold text-gray-800 group-hover:text-black">${record.numberPlate}</p>
+                            <p class="text-xs text-gray-500">${record.bikeModel}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-gray-800">₹${record.cost}</p>
+                            <p class="text-[10px] text-gray-400">${record.date}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderHistory(filterText = "") {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+            
+            const filtered = services.filter(r => r.numberPlate.includes(filterText.toUpperCase()) || r.customerPhone.includes(filterText));
+
+            if (filtered.length === 0) {
+                historyList.innerHTML = `<p class="text-sm text-gray-500 ml-4">No records found.</p>`;
+                return;
+            }
+
+            filtered.forEach(record => {
+                historyList.innerHTML += `
+                    <div class="relative pl-6">
+                        <div class="absolute w-3 h-3 bg-black rounded-full -left-[7px] top-1.5 border-2 border-white shadow-sm"></div>
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <span class="bg-gray-100 text-gray-800 text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wide">${record.numberPlate}</span>
+                                    <p class="text-sm font-bold mt-1.5">${record.customerName}</p>
+                                </div>
+                                <div class="text-right flex flex-col items-end">
+                                    <p class="text-[10px] font-semibold text-gray-400">${record.date}</p>
+                                    <button onclick="editRecord(${record.id})" class="mt-1 w-7 h-7 bg-gray-50 text-gray-600 rounded-full flex items-center justify-center hover:bg-gray-200 transition">
+                                        <i class="fas fa-pencil-alt text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-3 bg-gray-50 p-2 rounded-lg"><strong>Work:</strong> ${record.workDone}</p>
+                            <div class="flex justify-between items-center border-t border-gray-100 pt-3">
+                                <p class="text-xs text-red-500 font-semibold"><i class="fas fa-bell mr-1"></i> Next: ${record.nextKm} KM</p>
+                                <p class="text-sm font-bold text-gray-900">₹${record.cost}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterHistory() { renderHistory(document.getElementById('searchPlate').value); }
+
+        function renderCustomers() {
+            const list = document.getElementById('customers-list');
+            const searchText = document.getElementById('searchCustomer').value.toLowerCase();
+            list.innerHTML = '';
+
+            const uniqueMap = new Map();
+            services.forEach(r => {
+                if(!uniqueMap.has(r.numberPlate)) {
+                    uniqueMap.set(r.numberPlate, r);
+                }
+            });
+
+            const uniqueCustomers = Array.from(uniqueMap.values()).filter(c => 
+                c.customerName.toLowerCase().includes(searchText) || 
+                c.bikeModel.toLowerCase().includes(searchText) ||
+                c.numberPlate.toLowerCase().includes(searchText)
+            );
+
+            if(uniqueCustomers.length === 0) {
+                list.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">No customers found.</p>`;
+                return;
+            }
+
+            uniqueCustomers.forEach(c => {
+                list.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md transition">
+                        <div>
+                            <p class="font-bold text-gray-900 text-sm mb-0.5">${c.customerName}</p>
+                            <div class="flex items-center gap-2">
+                                <span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">${c.numberPlate}</span>
+                                <span class="text-xs text-gray-500">${c.bikeModel}</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1"><i class="fas fa-phone text-[10px] mr-1"></i>${c.customerPhone}</p>
+                        </div>
+                        <button onclick="quickWhatsApp('${c.customerPhone}', '${c.customerName}')" class="w-10 h-10 bg-[#25D366] text-white rounded-full shadow-sm flex items-center justify-center hover:bg-[#1ebe57] transition">
+                            <i class="fab fa-whatsapp text-lg"></i>
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        // 8. DATA MANAGEMENT
+        function saveData() { localStorage.setItem('tmr_services', JSON.stringify(services)); }
+
+        function exportData() {
+            if(services.length === 0) return alert("No data to export!");
+            const dataStr = JSON.stringify(services);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            let link = document.createElement('a');
+            link.setAttribute('href', dataUri);
+            link.setAttribute('download', `TMR_Backup_${new Date().toLocaleDateString('en-IN').replace(/\//g, '-')}.json`);
+            link.click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if(Array.isArray(importedData)) {
+                        services = importedData;
+                        saveData();
+                        alert("Data restored successfully!");
+                        switchView('dashboard');
+                    }
+                } catch (error) { alert("Invalid backup file."); }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearData() {
+            if(confirm("DANGER: Are you sure you want to delete ALL data? Make sure you exported a backup first!")) {
+                localStorage.removeItem('tmr_services');
+                services =switchView('dashboard');
+                alert("All data deleted.");
+            }
+        }
+
+        // Initialize App
+        renderDashboard();
+
+    </script>
+</body>
+  </html>
