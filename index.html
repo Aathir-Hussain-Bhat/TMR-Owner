@@ -2,23 +2,36 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TMR - Workshop Tracker</title>
+    
+    <!-- PWA / Mobile App Meta Tags -->
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TMR Workshop">
+    <link id="pwa-manifest" rel="manifest" href="">
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome (v6 for X-Twitter logo) -->
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- HTML2PDF Library for Invoice Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { display: none; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        /* Hide invoice template from UI but keep it renderable for html2pdf */
+        #invoice-template-container { position: absolute; left: -9999px; top: -9999px; width: 800px; background: white; z-index: -1; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 pb-24">
 
     <!-- SPLASH SCREEN -->
-    <div id="splash-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center transition-opacity duration-500">
-        <div class="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mb-4 shadow-lg animate-bounce">
+    <div id="splash-screen" class="fixed inset-0 bg-white z-[60] flex flex-col items-center justify-center transition-opacity duration-500">
+        <div id="splash-icon-container" class="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mb-4 shadow-lg animate-bounce">
             <i class="fas fa-motorcycle text-white text-3xl"></i>
         </div>
         <h1 class="text-4xl font-extrabold tracking-tight text-gray-900">TMR</h1>
@@ -26,22 +39,65 @@
         <div class="mt-10 w-6 h-6 border-2 border-gray-100 border-t-black rounded-full animate-spin"></div>
     </div>
 
+    <!-- SETUP / LOGIN SCREEN -->
+    <div id="setup-screen" class="fixed inset-0 bg-white z-[55] flex flex-col items-center justify-center hidden">
+        <div class="w-full max-w-sm p-6">
+            <div class="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mb-6 shadow-lg mx-auto">
+                <i class="fas fa-motorcycle text-white text-3xl"></i>
+            </div>
+            <h1 class="text-3xl font-extrabold tracking-tight text-gray-900 text-center mb-2">Welcome to TMR</h1>
+            <p class="text-sm text-gray-500 text-center mb-8">Setup your workshop profile to continue</p>
+            
+            <form id="setupForm" class="space-y-5">
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-gray-600">Workshop Name</label>
+                    <input type="text" id="setup-workshopName" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 outline-none focus:border-black placeholder-gray-400 focus:bg-white transition" placeholder="e.g. Bhat Auto Repair">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-gray-600">Admin/Owner Name</label>
+                    <input type="text" id="setup-adminName" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 outline-none focus:border-black placeholder-gray-400 focus:bg-white transition" placeholder="e.g. Aathir Hussain">
+                </div>
+                <button type="submit" class="w-full bg-black text-white font-bold rounded-lg py-4 mt-4 shadow-md hover:bg-gray-800 transition flex items-center justify-center gap-2">
+                    Get Started <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- HEADER -->
     <header class="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10 px-5 py-4 flex justify-between items-center">
-        <div>
-            <h1 class="text-xl font-bold tracking-tight">TMR</h1>
-            <p id="header-workshop-name" class="text-xs text-gray-500">Bhat Network</p>
+        <div class="flex items-center gap-3">
+            <img id="header-logo" src="" alt="Logo" class="w-9 h-9 rounded-full object-cover border border-gray-200 shadow-sm hidden">
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">TMR</h1>
+                <p id="header-workshop-name" class="text-xs text-gray-500 font-medium">Bhat Network</p>
+            </div>
         </div>
         <div class="flex items-center gap-2">
             <!-- Creator Icon -->
             <button onclick="openCreatorWall()" class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition text-gray-600 hover:text-black shadow-sm">
                 <i class="fas fa-code text-sm"></i>
             </button>
-            <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center shadow-sm">
+            <!-- Notification Icon (Now Functional) -->
+            <div onclick="openNotifications()" class="relative w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center shadow-sm cursor-pointer hover:bg-gray-200 transition">
                 <i class="fas fa-bell text-gray-500 text-sm"></i>
+                <span id="notif-badge" class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full hidden"></span>
             </div>
         </div>
     </header>
+
+    <!-- OVERLAY: NOTIFICATIONS -->
+    <div id="notif-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-start justify-center hidden opacity-0 transition-opacity duration-300 pt-20 sm:items-center sm:pt-0">
+        <div class="bg-white rounded-3xl w-11/12 max-w-sm p-6 relative transform scale-95 transition-transform duration-300 shadow-2xl" id="notif-content">
+            <button onclick="closeNotifications()" class="absolute top-4 right-4 w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-500 hover:text-black hover:bg-gray-100 transition">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 class="text-xl font-extrabold text-gray-900 mb-4 border-b border-gray-100 pb-3">Notifications</h2>
+            <div id="notif-list" class="space-y-3 max-h-[60vh] overflow-y-auto">
+                <!-- Injected by JS -->
+            </div>
+        </div>
+    </div>
 
     <!-- OVERLAY: CREATOR WALL -->
     <div id="creator-wall-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
@@ -83,26 +139,109 @@
         </div>
     </div>
 
-    <!-- OVERLAY: SERVICE DETAILS (Click from Recent Services) -->
+    <!-- OVERLAY: SERVICE DETAILS -->
     <div id="service-details-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <!-- Bottom sheet on mobile, centered modal on desktop -->
-        <div class="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:w-11/12 sm:max-w-md p-6 relative transform translate-y-full sm:translate-y-0 sm:scale-95 transition-all duration-300 shadow-2xl" id="service-details-content">
-            <!-- Mobile pull-indicator -->
+        <div class="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:w-11/12 sm:max-w-md p-6 relative transform translate-y-full sm:translate-y-0 sm:scale-95 transition-all duration-300 shadow-2xl overflow-y-auto max-h-[90vh]" id="service-details-content">
             <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-5 sm:hidden"></div>
             
             <button onclick="closeServiceDetails()" class="absolute top-5 right-5 w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-500 hover:text-black transition">
                 <i class="fas fa-times"></i>
             </button>
             
-            <h2 class="text-lg font-extrabold mb-5 text-gray-900 border-b border-gray-100 pb-4">Service Details</h2>
+            <div class="flex justify-between items-center mb-5 border-b border-gray-100 pb-4">
+                <h2 class="text-lg font-extrabold text-gray-900">Service Details</h2>
+                <div id="sd-payment-badge"></div>
+            </div>
             
             <!-- Injected by JS -->
             <div id="sd-content" class="space-y-4"></div>
             
-            <div class="mt-6 pt-4 border-t border-gray-100">
+            <div class="mt-6 pt-4 border-t border-gray-100 space-y-3">
                  <button id="sd-whatsapp-btn" class="w-full bg-[#25D366] text-white font-bold rounded-lg py-3.5 flex items-center justify-center gap-2 hover:bg-[#1ebe57] shadow-sm transition">
                     <i class="fab fa-whatsapp text-lg"></i> Send Receipt via WhatsApp
                 </button>
+                 <button id="sd-pdf-btn" class="w-full bg-gray-900 text-white font-bold rounded-lg py-3.5 flex items-center justify-center gap-2 hover:bg-black shadow-sm transition">
+                    <i class="fas fa-file-pdf text-lg"></i> Download PDF Invoice
+                </button>
+                 <!-- Added dynamically if pending -->
+                 <div id="sd-mark-paid-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HIDDEN PDF INVOICE TEMPLATE -->
+    <div id="invoice-template-container">
+        <div id="invoice-template" class="bg-white p-10 text-gray-800" style="width: 800px; min-height: 1100px; font-family: Arial, sans-serif;">
+            <div class="flex justify-between items-start border-b-2 border-gray-200 pb-8 mb-8">
+                <div class="flex items-center gap-4">
+                    <img id="inv-logo" src="" alt="Logo" class="w-20 h-20 object-cover rounded-lg hidden">
+                    <div>
+                        <h1 id="inv-workshopName" class="text-3xl font-black text-gray-900 uppercase tracking-tight">Workshop Name</h1>
+                        <p id="inv-address" class="text-sm text-gray-500 mt-1 max-w-xs">Address Line</p>
+                        <p id="inv-phone" class="text-sm text-gray-500 font-semibold mt-1">Phone</p>
+                        <p id="inv-taxId" class="text-xs text-gray-400 mt-1 font-mono hidden">GSTIN: <span id="inv-tax-val"></span></p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <h2 class="text-4xl font-black text-gray-200 uppercase tracking-widest">INVOICE</h2>
+                    <p class="text-sm text-gray-500 mt-2 font-semibold">Date: <span id="inv-date" class="text-gray-900"></span></p>
+                    <p class="text-sm text-gray-500">Invoice No: <span id="inv-id" class="text-gray-900 font-mono"></span></p>
+                    <p class="text-sm text-gray-500 mt-1 font-bold">Status: <span id="inv-status" class="uppercase"></span></p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-10 mb-8">
+                <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                    <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-3">Billed To Customer</p>
+                    <h3 id="inv-customerName" class="text-xl font-bold text-gray-900">Name</h3>
+                    <p id="inv-customerPhone" class="text-sm text-gray-600 mt-1">Phone</p>
+                </div>
+                <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                    <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-3">Vehicle Details</p>
+                    <h3 id="inv-bikeModel" class="text-xl font-bold text-gray-900">Bike Model</h3>
+                    <div class="flex items-center gap-4 mt-2">
+                        <span id="inv-numberPlate" class="bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded font-bold uppercase font-mono">Plate</span>
+                        <span class="text-sm text-gray-600 font-semibold"><i class="fas fa-tachometer-alt mr-1 text-gray-400"></i> <span id="inv-currentKm"></span> KM</span>
+                    </div>
+                </div>
+            </div>
+
+            <table class="w-full mb-8 text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-900 text-white">
+                        <th class="py-3 px-4 rounded-tl-lg text-sm uppercase tracking-wider font-semibold w-3/4">Description of Work / Parts</th>
+                        <th class="py-3 px-4 rounded-tr-lg text-sm uppercase tracking-wider font-semibold text-right">Amount (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border-b border-gray-200">
+                        <td id="inv-workDone" class="py-6 px-4 text-gray-700 whitespace-pre-wrap leading-relaxed align-top">Work description</td>
+                        <td class="py-6 px-4 text-right align-top">
+                            <div class="text-sm text-gray-500 mb-1">Parts: ₹<span id="inv-parts"></span></div>
+                            <div class="text-sm text-gray-500 border-b border-gray-200 pb-2 mb-2">Labour: ₹<span id="inv-labour"></span></div>
+                            <div id="inv-cost" class="text-gray-900 font-bold text-xl">Cost</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="flex justify-between items-end">
+                <div class="w-1/2">
+                    <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl">
+                        <p class="text-xs text-blue-500 font-bold uppercase tracking-wider mb-1"><i class="fas fa-bell"></i> Next Service Reminder</p>
+                        <p class="text-sm text-blue-900 font-semibold">Vehicle is due for next service at <span id="inv-nextKm" class="font-black text-lg"></span> KM.</p>
+                    </div>
+                </div>
+                <div class="w-1/3 text-right">
+                    <p class="text-sm text-gray-500 font-bold uppercase mb-1">Grand Total</p>
+                    <h3 id="inv-total" class="text-5xl font-black text-gray-900 tracking-tighter">₹0</h3>
+                    <p class="text-xs text-gray-400 mt-2 font-bold uppercase">Paid via: <span id="inv-method"></span></p>
+                </div>
+            </div>
+
+            <div class="mt-20 pt-8 border-t-2 border-gray-200 text-center text-sm text-gray-500">
+                <p class="font-bold text-gray-800 mb-1">Thank you for trusting <span class="inv-workshopName-foot"></span>!</p>
+                <p>This is a system-generated invoice and does not require a physical signature.</p>
             </div>
         </div>
     </div>
@@ -114,19 +253,99 @@
         <div id="view-dashboard" class="view-section">
             <h2 class="text-lg font-semibold mb-4">Dashboard</h2>
             
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                    <p class="text-sm text-gray-500">Total Services</p>
-                    <p class="text-2xl font-bold" id="stat-total-services">0</p>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center">
+                    <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Total Services</p>
+                    <p class="text-2xl font-black text-gray-900" id="stat-total-services">0</p>
                 </div>
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                    <p class="text-sm text-gray-500">Revenue</p>
-                    <p class="text-2xl font-bold" id="stat-revenue">₹0</p>
+                <!-- Clickable Total Revenue Box -->
+                <div onclick="switchView('revenue')" class="bg-white p-4 rounded-2xl shadow-sm border border-green-100 flex flex-col justify-center cursor-pointer hover:bg-green-50 transition relative group">
+                    <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Total Revenue</p>
+                    <p class="text-2xl font-black text-green-600" id="stat-revenue">₹0</p>
+                    <i class="fas fa-chevron-right absolute right-4 text-green-200 group-hover:text-green-500 transition"></i>
                 </div>
+            </div>
+
+            <div onclick="switchView('revenue')" class="cursor-pointer bg-black text-white p-5 rounded-2xl shadow-lg mb-6 flex justify-between items-center bg-gradient-to-br from-gray-900 to-black hover:scale-[1.01] transition-transform">
+                <div>
+                    <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">This Month</p>
+                    <p class="text-2xl font-black" id="stat-month-revenue">₹0</p>
+                </div>
+                <div class="text-right border-l border-gray-700 pl-5">
+                    <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Total Profit</p>
+                    <p class="text-2xl font-black text-[#25D366]" id="stat-total-profit">₹0</p>
+                </div>
+            </div>
+
+            <!-- PENDING PAYMENTS ALERT -->
+            <div id="pending-payments-banner" onclick="switchView('pending')" class="cursor-pointer bg-yellow-50 border border-yellow-200 p-4 rounded-2xl shadow-sm mb-3 flex items-center justify-between hidden hover:bg-yellow-100 transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-yellow-200 text-yellow-700 rounded-full flex items-center justify-center shadow-inner">
+                        <i class="fas fa-hand-holding-dollar text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-yellow-600 font-bold uppercase tracking-wider mb-0.5">Pending Payments</p>
+                        <p class="text-sm font-black text-yellow-800"><span id="pending-count">0</span> Services Unpaid (₹<span id="pending-amount">0</span>)</p>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right text-yellow-400"></i>
+            </div>
+
+            <!-- DUE REMINDERS BANNER -->
+            <div id="due-reminders-banner" onclick="switchView('reminders')" class="cursor-pointer bg-red-50 border border-red-100 p-4 rounded-2xl shadow-sm mb-6 flex items-center justify-between hidden hover:bg-red-100 transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-red-100 text-red-500 rounded-full flex items-center justify-center shadow-inner">
+                        <i class="fas fa-exclamation-circle text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-red-400 font-bold uppercase tracking-wider mb-0.5">Action Needed</p>
+                        <p class="text-sm font-black text-red-700"><span id="due-count">0</span> Customers Due For Service</p>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right text-red-300"></i>
             </div>
 
             <h3 class="text-md font-semibold mb-3">Recent Services</h3>
             <div id="recent-list" class="space-y-3"></div>
+        </div>
+
+        <!-- 1.5 REVENUE INSIGHTS DETAILS -->
+        <div id="view-revenue" class="view-section hidden">
+            <div class="flex items-center gap-3 mb-6">
+                <button onclick="switchView('dashboard')" class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 hover:text-black transition">
+                    <i class="fas fa-arrow-left text-sm"></i>
+                </button>
+                <h2 class="text-xl font-bold">Revenue Insights</h2>
+            </div>
+            <div id="revenue-insights-content" class="space-y-4"></div>
+        </div>
+
+        <!-- 1.6 DUE REMINDERS VIEW -->
+        <div id="view-reminders" class="view-section hidden">
+            <div class="flex items-center gap-3 mb-6">
+                <button onclick="switchView('dashboard')" class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 hover:text-black transition">
+                    <i class="fas fa-arrow-left text-sm"></i>
+                </button>
+                <div>
+                    <h2 class="text-xl font-bold text-red-600">Overdue Services</h2>
+                    <p class="text-xs text-gray-500">Customers inactive for > 90 days</p>
+                </div>
+            </div>
+            <div id="reminders-list" class="space-y-3"></div>
+        </div>
+
+        <!-- 1.7 PENDING PAYMENTS VIEW -->
+        <div id="view-pending" class="view-section hidden">
+            <div class="flex items-center gap-3 mb-6">
+                <button onclick="switchView('dashboard')" class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 hover:text-black transition">
+                    <i class="fas fa-arrow-left text-sm"></i>
+                </button>
+                <div>
+                    <h2 class="text-xl font-bold text-yellow-600">Pending Payments</h2>
+                    <p class="text-xs text-gray-500">Services marked as unpaid</p>
+                </div>
+            </div>
+            <div id="pending-list" class="space-y-3"></div>
         </div>
 
         <!-- 2. ADD SERVICE -->
@@ -158,20 +377,58 @@
                         <input type="number" id="currentKm" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
                     </div>
                     <div class="space-y-2">
-                        <label class="text-sm font-semibold text-gray-600">Total Cost (₹)</label>
-                        <input type="number" id="cost" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+                        <label class="text-sm font-semibold text-gray-600">Next Service (KM)</label>
+                        <input type="number" id="nextKm" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
                     </div>
                 </div>
+                
                 <div class="space-y-2">
                     <label class="text-sm font-semibold text-gray-600">Work Done</label>
-                    <textarea id="workDone" rows="3" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black"></textarea>
+                    <textarea id="workDone" rows="2" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black"></textarea>
                 </div>
-                <div class="space-y-2 mb-4">
-                    <label class="text-sm font-semibold text-gray-600">Next Service At (KM)</label>
-                    <input type="number" id="nextKm" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+
+                <!-- NEW FINANCIAL BLOCK -->
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-2">Billing Details</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-gray-600">Parts Cost (₹)</label>
+                            <input type="number" id="costParts" oninput="calcTotal('')" required class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black" placeholder="0">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-gray-600">Labour Cost (₹)</label>
+                            <input type="number" id="costLabour" oninput="calcTotal('')" required class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
+                        <span class="text-sm font-bold text-gray-700">Total Amount</span>
+                        <div class="flex items-center">
+                            <span class="text-gray-500 font-bold mr-1">₹</span>
+                            <input type="number" id="costTotal" readonly class="w-20 bg-transparent font-black text-xl text-right outline-none text-gray-900" value="0">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 pt-2">
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-gray-600">Payment Status</label>
+                            <select id="paymentStatus" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black font-semibold">
+                                <option value="paid" class="text-green-600">✅ Paid</option>
+                                <option value="pending" class="text-yellow-600">⏳ Pending</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-gray-600">Payment Method</label>
+                            <select id="paymentMethod" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black font-semibold">
+                                <option value="cash">💵 Cash</option>
+                                <option value="upi">📱 UPI</option>
+                                <option value="card">💳 Card</option>
+                                <option value="other">⚙️ Other</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
-                <button type="submit" class="w-full bg-black text-white font-semibold rounded-lg py-3 shadow-md hover:bg-gray-800 transition">
-                    Save & WhatsApp
+
+                <button type="submit" class="w-full bg-black text-white font-semibold rounded-lg py-3.5 shadow-md hover:bg-gray-800 transition">
+                    Save Service & Send Receipt
                 </button>
             </form>
         </div>
@@ -210,19 +467,56 @@
                         <input type="number" id="edit-currentKm" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
                     </div>
                     <div class="space-y-2">
-                        <label class="text-sm font-semibold text-gray-600">Total Cost (₹)</label>
-                        <input type="number" id="edit-cost" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+                        <label class="text-sm font-semibold text-gray-600">Next Service (KM)</label>
+                        <input type="number" id="edit-nextKm" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
                     </div>
                 </div>
+                
                 <div class="space-y-2">
                     <label class="text-sm font-semibold text-gray-600">Work Done</label>
-                    <textarea id="edit-workDone" rows="3" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black"></textarea>
+                    <textarea id="edit-workDone" rows="2" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black"></textarea>
                 </div>
-                <div class="space-y-2 mb-4">
-                    <label class="text-sm font-semibold text-gray-600">Next Service At (KM)</label>
-                    <input type="number" id="edit-nextKm" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-2">Billing Details</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-gray-600">Parts Cost (₹)</label>
+                            <input type="number" id="edit-costParts" oninput="calcTotal('edit-')" required class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black" placeholder="0">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-gray-600">Labour Cost (₹)</label>
+                            <input type="number" id="edit-costLabour" oninput="calcTotal('edit-')" required class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
+                        <span class="text-sm font-bold text-gray-700">Total Amount</span>
+                        <div class="flex items-center">
+                            <span class="text-gray-500 font-bold mr-1">₹</span>
+                            <input type="number" id="edit-costTotal" readonly class="w-20 bg-transparent font-black text-xl text-right outline-none text-gray-900" value="0">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 pt-2">
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-gray-600">Payment Status</label>
+                            <select id="edit-paymentStatus" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black font-semibold">
+                                <option value="paid">✅ Paid</option>
+                                <option value="pending">⏳ Pending</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-gray-600">Payment Method</label>
+                            <select id="edit-paymentMethod" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black font-semibold">
+                                <option value="cash">💵 Cash</option>
+                                <option value="upi">📱 UPI</option>
+                                <option value="card">💳 Card</option>
+                                <option value="other">⚙️ Other</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
-                <button type="submit" class="w-full bg-black text-white font-semibold rounded-lg py-3 shadow-md hover:bg-gray-800 transition">
+
+                <button type="submit" class="w-full bg-black text-white font-semibold rounded-lg py-3.5 shadow-md hover:bg-gray-800 transition">
                     Update Service
                 </button>
                 <button type="button" onclick="deleteEditingRecord()" class="w-full bg-red-50 text-red-600 font-semibold rounded-lg py-3 mt-2 hover:bg-red-100 transition">
@@ -247,37 +541,101 @@
 
         <!-- 5. OWNER VIEW -->
         <div id="view-owner" class="view-section hidden">
-            <h2 class="text-lg font-semibold mb-4">Workshop Settings</h2>
-
-            <form id="ownerForm" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 space-y-4">
-                <div class="flex items-center gap-4 mb-2">
-                    <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-xl">🧑‍🔧</div>
-                    <div class="flex-1">
-                        <input type="text" id="set-workshopName" placeholder="Workshop Name" required class="font-bold text-gray-900 w-full outline-none bg-transparent border-b border-gray-200 focus:border-black pb-1">
-                        <input type="text" id="set-adminName" placeholder="Admin Name" required class="text-xs text-gray-500 w-full outline-none bg-transparent border-b border-gray-200 focus:border-black pb-1 mt-1">
-                    </div>
-                </div>
-                <button type="submit" class="w-full bg-black text-white text-sm font-semibold rounded-lg py-2">Save Profile Details</button>
-            </form>
-
-            <h3 class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wider">Data Management</h3>
             
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
-                <button onclick="exportData()" class="w-full bg-gray-100 text-black font-semibold rounded-lg py-3 flex items-center justify-center gap-2 hover:bg-gray-200">
-                    <i class="fas fa-file-export"></i> Backup (Export Data)
-                </button>
-                <div class="relative">
-                    <input type="file" id="importFile" accept=".json" onchange="importData(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                    <button class="w-full bg-gray-100 text-black font-semibold rounded-lg py-3 flex items-center justify-center gap-2 hover:bg-gray-200 pointer-events-none">
-                        <i class="fas fa-file-import"></i> Restore (Import Data)
-                    </button>
+            <div class="bg-gradient-to-br from-gray-900 to-black rounded-3xl p-6 text-white mb-6 relative shadow-xl overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
+                
+                <div class="flex items-center gap-5 relative z-10">
+                    <div class="relative group cursor-pointer" onclick="document.getElementById('logoUpload').click()">
+                        <div id="owner-logo-placeholder" class="w-20 h-20 rounded-2xl bg-gray-800 border-2 border-gray-700 shadow-lg flex items-center justify-center text-gray-400 text-3xl">
+                            <i class="fas fa-store"></i>
+                        </div>
+                        <img id="owner-logo-preview" src="" alt="Workshop Logo" class="w-20 h-20 rounded-2xl object-cover bg-gray-800 border-2 border-gray-700 shadow-lg hidden">
+                        <div class="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300">
+                            <i class="fas fa-camera text-white"></i>
+                        </div>
+                    </div>
+                    <input type="file" id="logoUpload" accept="image/*" onchange="handleLogoUpload(event)" class="hidden">
+                    
+                    <div class="flex-1">
+                        <h2 class="text-2xl font-black tracking-tight leading-none mb-1" id="profile-display-name">Loading...</h2>
+                        <p class="text-gray-400 text-sm font-medium" id="profile-display-admin">Administrator</p>
+                        <span class="inline-block mt-2 bg-[#25D366]/20 text-[#25D366] text-[10px] font-bold px-2 py-1 rounded-md border border-[#25D366]/20">
+                            <i class="fas fa-check-circle mr-1"></i> Verified Workshop
+                        </span>
+                    </div>
                 </div>
             </div>
 
-            <div class="mt-8 pt-6 border-t border-gray-200">
-                <button onclick="clearData()" class="w-full bg-red-50 text-red-600 font-semibold rounded-lg py-3 flex items-center justify-center gap-2 hover:bg-red-100">
-                    <i class="fas fa-trash-alt"></i> Delete All App Data
+            <form id="ownerForm" class="space-y-6">
+                <div>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-1">Business Identity</h3>
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Workshop Name</label>
+                            <input type="text" id="set-workshopName" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm font-semibold text-gray-900 transition">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Owner/Admin Name</label>
+                            <input type="text" id="set-adminName" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm font-semibold text-gray-900 transition">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-1">Documents & Contact</h3>
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Contact No.</label>
+                                <input type="number" id="set-phone" placeholder="Business Phone" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm text-gray-900 transition">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">GST / Trade Lic.</label>
+                                <input type="text" id="set-taxId" placeholder="GSTIN / License" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm text-gray-900 uppercase transition">
+                            </div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Email Address</label>
+                            <input type="email" id="set-email" placeholder="workshop@example.com" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm text-gray-900 transition">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Workshop Address</label>
+                            <textarea id="set-address" rows="2" placeholder="Full Business Address" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm text-gray-900 transition"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-black text-white font-bold rounded-xl py-3.5 shadow-md shadow-gray-400/30 hover:bg-gray-800 transition">
+                    Save Profile Details
                 </button>
+            </form>
+
+            <hr class="my-8 border-gray-200">
+
+            <div>
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-1">System & Data</h3>
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
+                    <button onclick="exportData()" class="w-full bg-gray-50 text-gray-800 font-semibold rounded-xl py-3.5 flex items-center justify-center gap-2 hover:bg-gray-100 border border-gray-200 transition">
+                        <i class="fas fa-file-export text-blue-500"></i> Backup (Export Data)
+                    </button>
+                    <div class="relative">
+                        <input type="file" id="importFile" accept=".json" onchange="importData(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                        <button class="w-full bg-gray-50 text-gray-800 font-semibold rounded-xl py-3.5 flex items-center justify-center gap-2 hover:bg-gray-100 border border-gray-200 transition pointer-events-none">
+                            <i class="fas fa-file-import text-green-500"></i> Restore (Import Data)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 mb-4">
+                <h3 class="text-xs font-bold text-red-400 uppercase tracking-widest mb-3 pl-1">Danger Zone</h3>
+                <div class="bg-red-50 rounded-2xl shadow-sm border border-red-100 p-4">
+                    <p class="text-[11px] text-red-600 mb-3 font-semibold leading-relaxed">Warning: This will permanently delete all services, customers, and settings from this device.</p>
+                    <button onclick="clearData()" class="w-full bg-white text-red-600 font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 hover:bg-red-600 hover:text-white transition border border-red-200">
+                        <i class="fas fa-trash-alt"></i> Delete All App Data
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -309,133 +667,276 @@
 
     <!-- JAVASCRIPT -->
     <script>
-        // 1. Data Initialization
-        let services = JSON.parse(localStorage.getItem('tmr_services')) ||[];
-        let ownerData = JSON.parse(localStorage.getItem('tmr_owner')) || {
-            workshopName: "Bhat Network",
-            adminName: "Administrator"
-        };
+        // --- PWA Setup ---
+        const svgIconUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='black' rx='100'/%3E%3Cpath fill='white' d='M352 224h-16c-8.8 0-16-7.2-16-16V144c0-26.5-21.5-48-48-48H208c-26.5 0-48 21.5-48 48v64c0 8.8-7.2 16-16 16h-16c-26.5 0-48 21.5-48 48v96c0 17.7 14.3 32 32 32h11.2c13.7 36 49.3 62.8 91.6 64h62.4c42.3-1.2 77.9-28 91.6-64H384c17.7 0 32-14.3 32-32v-96c0-26.5-21.5-48-48-48zm-144 0v-80h80v80h-80z'/%3E%3C/svg%3E";
+        const manifestContent = { name: "TMR Workshop", short_name: "TMR", description: "Workshop Management System", display: "standalone", background_color: "#ffffff", theme_color: "#000000", icons: [ { src: svgIconUrl, sizes: "512x512", type: "image/svg+xml" } ] };
+        const manifestBlob = new Blob([JSON.stringify(manifestContent)], { type: 'application/json' });
+        document.getElementById('pwa-manifest').href = URL.createObjectURL(manifestBlob);
+        
+        // --- Data Initialization & Legacy Support Handlers ---
+        let services = JSON.parse(localStorage.getItem('tmr_services')) || [];
+        let ownerData = JSON.parse(localStorage.getItem('tmr_owner'));
+        let isSetup = localStorage.getItem('tmr_isSetup') === 'true';
+
+        if (!ownerData) ownerData = { workshopName: "Bhat Network", adminName: "Administrator" };
+        ownerData.logo = ownerData.logo || ""; ownerData.phone = ownerData.phone || ""; ownerData.email = ownerData.email || ""; ownerData.address = ownerData.address || ""; ownerData.taxId = ownerData.taxId || "";
+
+        function getCostParts(r) { return Number(r.cost_parts) || 0; }
+        function getCostLabour(r) { return Number(r.cost_labour) || Number(r.cost) || 0; }
+        function getCostTotal(r) { return Number(r.cost_total) || Number(r.cost) || 0; }
+        function getPaymentStatus(r) { return r.payment_status || 'paid'; }
+        function getPaymentMethod(r) { return r.payment_method || 'cash'; }
+        function getProfit(r) { return r.profit !== undefined ? Number(r.profit) : getCostLabour(r); }
 
         function initApp() {
             document.getElementById('header-workshop-name').innerText = ownerData.workshopName;
             document.getElementById('splash-workshop-name').innerText = ownerData.workshopName;
-            document.getElementById('set-workshopName').value = ownerData.workshopName;
-            document.getElementById('set-adminName').value = ownerData.adminName;
+            document.getElementById('profile-display-name').innerText = ownerData.workshopName;
+            document.getElementById('profile-display-admin').innerText = ownerData.adminName;
+            
+            document.getElementById('set-workshopName').value = ownerData.workshopName; document.getElementById('set-adminName').value = ownerData.adminName;
+            document.getElementById('set-phone').value = ownerData.phone; document.getElementById('set-taxId').value = ownerData.taxId;
+            document.getElementById('set-email').value = ownerData.email; document.getElementById('set-address').value = ownerData.address;
+
+            document.getElementById('inv-workshopName').innerText = ownerData.workshopName;
+            document.getElementById('inv-address').innerText = ownerData.address || "Address not provided";
+            document.getElementById('inv-phone').innerText = ownerData.phone ? `Ph: ${ownerData.phone}` : "";
+            if(ownerData.taxId) { document.getElementById('inv-taxId').classList.remove('hidden'); document.getElementById('inv-tax-val').innerText = ownerData.taxId; }
+            document.querySelectorAll('.inv-workshopName-foot').forEach(el => el.innerText = ownerData.workshopName);
+
+            if (ownerData.logo) {
+                document.getElementById('header-logo').src = ownerData.logo; document.getElementById('header-logo').classList.remove('hidden');
+                document.getElementById('splash-icon-container').innerHTML = `<img src="${ownerData.logo}" class="w-16 h-16 rounded-2xl object-cover">`;
+                document.getElementById('owner-logo-preview').src = ownerData.logo; document.getElementById('owner-logo-preview').classList.remove('hidden');
+                document.getElementById('owner-logo-placeholder').classList.add('hidden');
+                document.getElementById('inv-logo').src = ownerData.logo; document.getElementById('inv-logo').classList.remove('hidden');
+            } else {
+                document.getElementById('header-logo').classList.add('hidden'); document.getElementById('owner-logo-preview').classList.add('hidden');
+                document.getElementById('owner-logo-placeholder').classList.remove('hidden'); document.getElementById('inv-logo').classList.add('hidden');
+            }
+            updateNotificationBadge();
         }
         initApp();
 
         window.addEventListener('load', () => {
             setTimeout(() => {
-                const splash = document.getElementById('splash-screen');
-                splash.classList.add('opacity-0');
-                setTimeout(() => splash.classList.add('hidden'), 500);
+                const splash = document.getElementById('splash-screen'); splash.classList.add('opacity-0');
+                setTimeout(() => { splash.classList.add('hidden'); if (!isSetup) document.getElementById('setup-screen').classList.remove('hidden'); }, 500);
             }, 1200);
         });
 
-        // Overlay Modals logic
-        function openCreatorWall() {
-            const overlay = document.getElementById('creator-wall-overlay');
-            const content = document.getElementById('creator-wall-content');
-            overlay.classList.remove('hidden');
-            void overlay.offsetWidth; // trigger reflow
-            overlay.classList.remove('opacity-0');
-            content.classList.remove('scale-95');
+        function handleLogoUpload(event) {
+            const file = event.target.files[0]; if(!file) return; const reader = new FileReader();
+            reader.onload = function(e) {
+                if(e.target.result.length > 2000000) { alert("Image is too large! Please choose a smaller logo under 1.5MB."); return; }
+                ownerData.logo = e.target.result; localStorage.setItem('tmr_owner', JSON.stringify(ownerData)); initApp();
+            }
+            reader.readAsDataURL(file);
         }
 
+        document.getElementById('setupForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            ownerData.workshopName = document.getElementById('setup-workshopName').value; ownerData.adminName = document.getElementById('setup-adminName').value;
+            localStorage.setItem('tmr_owner', JSON.stringify(ownerData)); localStorage.setItem('tmr_isSetup', 'true'); isSetup = true;
+            initApp(); document.getElementById('setup-screen').classList.add('hidden');
+        });
+
+        // --- Core Functions ---
+        function calcTotal(prefix) {
+            const parts = Number(document.getElementById(prefix + 'costParts').value) || 0;
+            const labour = Number(document.getElementById(prefix + 'costLabour').value) || 0;
+            document.getElementById(prefix + 'costTotal').value = parts + labour;
+        }
+
+        // --- NEW: Notifications Logic ---
+        function updateNotificationBadge() {
+            let pendingCount = services.filter(s => getPaymentStatus(s) === 'pending').length;
+            const uniqueMap = new Map(); services.forEach(r => { if(!uniqueMap.has(r.numberPlate)) uniqueMap.set(r.numberPlate, r); });
+            const now = new Date(); let dueCount = 0;
+            uniqueMap.forEach(record => {
+                const rDate = parseDateIndia(record.date);
+                if((now - rDate) / (1000 * 60 * 60 * 24) > 90) dueCount++;
+            });
+
+            const badge = document.getElementById('notif-badge');
+            if(pendingCount > 0 || dueCount > 0) { badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); }
+        }
+
+        function openNotifications() {
+            let pendingCount = services.filter(s => getPaymentStatus(s) === 'pending').length;
+            const uniqueMap = new Map(); services.forEach(r => { if(!uniqueMap.has(r.numberPlate)) uniqueMap.set(r.numberPlate, r); });
+            const now = new Date(); let dueCount = 0;
+            uniqueMap.forEach(record => {
+                const rDate = parseDateIndia(record.date);
+                if((now - rDate) / (1000 * 60 * 60 * 24) > 90) dueCount++;
+            });
+
+            const list = document.getElementById('notif-list'); list.innerHTML = '';
+
+            if(pendingCount === 0 && dueCount === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-6">
+                        <div class="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl"><i class="fas fa-check"></i></div>
+                        <p class="text-gray-500 font-medium">You're all caught up!</p>
+                    </div>`;
+            } else {
+                if(pendingCount > 0) {
+                    list.innerHTML += `
+                        <div onclick="closeNotifications(); switchView('pending')" class="cursor-pointer bg-yellow-50 p-4 rounded-2xl border border-yellow-100 flex items-center gap-4 hover:bg-yellow-100 transition">
+                            <div class="w-10 h-10 bg-yellow-200 text-yellow-700 rounded-full flex items-center justify-center shrink-0"><i class="fas fa-hand-holding-dollar"></i></div>
+                            <div class="flex-1"><p class="text-sm font-bold text-gray-900">Pending Payments</p><p class="text-xs text-yellow-700">${pendingCount} services waiting for payment</p></div>
+                            <i class="fas fa-chevron-right text-yellow-400 text-sm"></i>
+                        </div>`;
+                }
+                if(dueCount > 0) {
+                    list.innerHTML += `
+                        <div onclick="closeNotifications(); switchView('reminders')" class="cursor-pointer bg-red-50 p-4 rounded-2xl border border-red-100 flex items-center gap-4 hover:bg-red-100 transition">
+                            <div class="w-10 h-10 bg-red-200 text-red-700 rounded-full flex items-center justify-center shrink-0"><i class="fas fa-motorcycle"></i></div>
+                            <div class="flex-1"><p class="text-sm font-bold text-gray-900">Service Reminders</p><p class="text-xs text-red-700">${dueCount} vehicles overdue for service</p></div>
+                            <i class="fas fa-chevron-right text-red-400 text-sm"></i>
+                        </div>`;
+                }
+            }
+
+            const overlay = document.getElementById('notif-overlay'); const content = document.getElementById('notif-content');
+            overlay.classList.remove('hidden'); void overlay.offsetWidth; overlay.classList.remove('opacity-0'); content.classList.remove('scale-95');
+        }
+
+        function closeNotifications() {
+            const overlay = document.getElementById('notif-overlay'); const content = document.getElementById('notif-content');
+            overlay.classList.add('opacity-0'); content.classList.add('scale-95'); setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        function openCreatorWall() {
+            const overlay = document.getElementById('creator-wall-overlay'); const content = document.getElementById('creator-wall-content');
+            overlay.classList.remove('hidden'); void overlay.offsetWidth; overlay.classList.remove('opacity-0'); content.classList.remove('scale-95');
+        }
         function closeCreatorWall() {
-            const overlay = document.getElementById('creator-wall-overlay');
-            const content = document.getElementById('creator-wall-content');
-            overlay.classList.add('opacity-0');
-            content.classList.add('scale-95');
-            setTimeout(() => overlay.classList.add('hidden'), 300);
+            const overlay = document.getElementById('creator-wall-overlay'); const content = document.getElementById('creator-wall-content');
+            overlay.classList.add('opacity-0'); content.classList.add('scale-95'); setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        function markAsPaid(id) {
+            const index = services.findIndex(r => r.id === id);
+            if(index !== -1) {
+                services[index].payment_status = 'paid';
+                saveData(); closeServiceDetails();
+                const currentView = Array.from(document.querySelectorAll('.view-section')).find(v => !v.classList.contains('hidden')).id;
+                switchView(currentView.replace('view-', ''));
+            }
         }
 
         function openServiceDetails(id) {
-            const record = services.find(r => r.id === id);
-            if(!record) return;
+            const record = services.find(r => r.id === id); if(!record) return;
+            const pStatus = getPaymentStatus(record);
+            const pMethod = getPaymentMethod(record);
+            
+            document.getElementById('sd-payment-badge').innerHTML = pStatus === 'paid' 
+                ? `<span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded border border-green-200">✅ Paid (${pMethod.toUpperCase()})</span>`
+                : `<span class="bg-yellow-100 text-yellow-700 text-xs font-bold px-2 py-1 rounded border border-yellow-200">⏳ Pending</span>`;
 
             document.getElementById('sd-content').innerHTML = `
                 <div class="flex justify-between items-center border-b border-gray-100 pb-3">
-                    <div>
-                        <p class="text-xs text-gray-500 font-medium">Service Date</p>
-                        <p class="font-bold text-gray-800">${record.date}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-xs text-gray-500 font-medium">Total Cost</p>
-                        <p class="font-black text-xl text-gray-900">₹${record.cost}</p>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4 border-b border-gray-100 py-3">
                     <div>
                         <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Customer</p>
                         <p class="font-bold text-sm text-gray-800">${record.customerName}</p>
                         <p class="text-xs text-gray-500">${record.customerPhone}</p>
                     </div>
-                    <div>
+                    <div class="text-right">
                         <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Vehicle</p>
                         <p class="font-bold text-sm text-gray-800">${record.numberPlate}</p>
                         <p class="text-xs text-gray-500">${record.bikeModel}</p>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4 border-b border-gray-100 py-3">
-                    <div>
-                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Current KM</p>
-                        <p class="font-bold text-sm text-gray-800">${record.currentKm} KM</p>
-                    </div>
-                    <div>
-                        <p class="text-[10px] text-red-400 font-bold uppercase tracking-wide">Next Service At</p>
-                        <p class="font-bold text-sm text-red-600">${record.nextKm} KM</p>
                     </div>
                 </div>
                 <div class="pt-2">
                     <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-2">Work Done</p>
                     <p class="bg-gray-50 p-3 rounded-xl text-sm text-gray-700 leading-relaxed border border-gray-100 shadow-inner">${record.workDone}</p>
                 </div>
+                <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <div class="flex justify-between text-sm text-gray-600 mb-2"><span>Parts Cost</span><span>₹${getCostParts(record)}</span></div>
+                    <div class="flex justify-between text-sm text-gray-600 mb-2 pb-2 border-b border-gray-200"><span>Labour Cost</span><span>₹${getCostLabour(record)}</span></div>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-gray-900">Total Billed</span>
+                        <span class="font-black text-xl text-gray-900">₹${getCostTotal(record)}</span>
+                    </div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-500 font-semibold px-1">
+                    <p>Date: ${record.date}</p>
+                    <p class="text-red-500">Next Service: ${record.nextKm} KM</p>
+                </div>
             `;
             
             document.getElementById('sd-whatsapp-btn').onclick = () => sendWhatsApp(record);
+            document.getElementById('sd-pdf-btn').onclick = () => downloadPDF(record);
 
-            const overlay = document.getElementById('service-details-overlay');
-            const content = document.getElementById('service-details-content');
-            overlay.classList.remove('hidden');
-            void overlay.offsetWidth;
-            overlay.classList.remove('opacity-0');
-            content.classList.remove('translate-y-full');
-            content.classList.remove('scale-95');
+            const mpContainer = document.getElementById('sd-mark-paid-container');
+            if(pStatus === 'pending') {
+                mpContainer.innerHTML = `
+                    <button onclick="markAsPaid(${record.id})" class="w-full bg-yellow-50 text-yellow-600 border border-yellow-200 font-bold rounded-lg py-3.5 flex items-center justify-center gap-2 hover:bg-yellow-100 transition mt-2">
+                        <i class="fas fa-check-circle"></i> Mark as Paid Now
+                    </button>
+                `;
+            } else { mpContainer.innerHTML = ''; }
+
+            const overlay = document.getElementById('service-details-overlay'); const content = document.getElementById('service-details-content');
+            overlay.classList.remove('hidden'); void overlay.offsetWidth;
+            overlay.classList.remove('opacity-0'); content.classList.remove('translate-y-full', 'scale-95');
         }
 
         function closeServiceDetails() {
-            const overlay = document.getElementById('service-details-overlay');
-            const content = document.getElementById('service-details-content');
-            overlay.classList.add('opacity-0');
-            content.classList.add('translate-y-full');
-            content.classList.add('scale-95');
+            const overlay = document.getElementById('service-details-overlay'); const content = document.getElementById('service-details-content');
+            overlay.classList.add('opacity-0'); content.classList.add('translate-y-full', 'scale-95');
             setTimeout(() => overlay.classList.add('hidden'), 300);
         }
 
-        // 2. View Navigation
+        function downloadPDF(record) {
+            document.getElementById('inv-date').innerText = record.date;
+            document.getElementById('inv-id').innerText = `INV-${record.id.toString().slice(-6)}`;
+            document.getElementById('inv-status').innerText = getPaymentStatus(record);
+            document.getElementById('inv-customerName').innerText = record.customerName;
+            document.getElementById('inv-customerPhone').innerText = `Ph: ${record.customerPhone}`;
+            document.getElementById('inv-bikeModel').innerText = record.bikeModel;
+            document.getElementById('inv-numberPlate').innerText = record.numberPlate;
+            document.getElementById('inv-currentKm').innerText = record.currentKm;
+            document.getElementById('inv-nextKm').innerText = record.nextKm;
+            document.getElementById('inv-workDone').innerText = record.workDone;
+            document.getElementById('inv-parts').innerText = getCostParts(record);
+            document.getElementById('inv-labour').innerText = getCostLabour(record);
+            document.getElementById('inv-cost').innerText = `Total: ₹${getCostTotal(record)}`;
+            document.getElementById('inv-total').innerText = `₹${getCostTotal(record)}`;
+            document.getElementById('inv-method').innerText = getPaymentMethod(record);
+
+            const element = document.getElementById('invoice-template');
+            const opt = { margin: 0, filename: `Invoice_${record.numberPlate}_${record.date.replace(/\//g, '-')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
+            const btn = document.getElementById('sd-pdf-btn'); const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin text-lg"></i> Generating PDF...`;
+            html2pdf().set(opt).from(element).save().then(() => { setTimeout(() => { btn.innerHTML = originalText; }, 1000); });
+        }
+
         function switchView(viewName) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.nav-btn').forEach(el => {
-                el.classList.remove('text-black');
-                el.classList.add('text-gray-400');
-            });
-
+            document.querySelectorAll('.nav-btn').forEach(el => { el.classList.remove('text-black'); el.classList.add('text-gray-400'); });
             document.getElementById(`view-${viewName}`).classList.remove('hidden');
             
-            if(viewName !== 'edit') {
-                document.getElementById(`nav-${viewName}`).classList.add('text-black');
-                document.getElementById(`nav-${viewName}`).classList.remove('text-gray-400');
+            const activeNav = document.getElementById(`nav-${viewName}`);
+            if(activeNav) { activeNav.classList.add('text-black'); activeNav.classList.remove('text-gray-400'); }
+            else if (['revenue', 'edit', 'reminders', 'pending'].includes(viewName)) {
+                document.getElementById('nav-dashboard').classList.add('text-black'); document.getElementById('nav-dashboard').classList.remove('text-gray-400');
             }
 
             if(viewName === 'dashboard') renderDashboard();
             if(viewName === 'history') renderHistory();
             if(viewName === 'customers') renderCustomers();
+            if(viewName === 'revenue') renderRevenueDetails();
+            if(viewName === 'reminders') renderReminders();
+            if(viewName === 'pending') renderPending();
         }
 
-        // 3. Add Service
         document.getElementById('serviceForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            const parts = Number(document.getElementById('costParts').value) || 0;
+            const labour = Number(document.getElementById('costLabour').value) || 0;
+            
             const record = {
                 id: Date.now(),
                 date: new Date().toLocaleDateString('en-IN'),
@@ -444,116 +945,133 @@
                 bikeModel: document.getElementById('bikeModel').value,
                 numberPlate: document.getElementById('numberPlate').value.toUpperCase(),
                 currentKm: document.getElementById('currentKm').value,
-                cost: document.getElementById('cost').value,
+                nextKm: document.getElementById('nextKm').value,
                 workDone: document.getElementById('workDone').value,
-                nextKm: document.getElementById('nextKm').value
+                
+                cost_parts: parts, cost_labour: labour, cost_total: parts + labour,
+                payment_status: document.getElementById('paymentStatus').value,
+                payment_method: document.getElementById('paymentMethod').value,
+                profit: labour
             };
-
-            services.unshift(record);
-            saveData();
-            sendWhatsApp(record);
-            this.reset();
+            services.unshift(record); saveData(); sendWhatsApp(record); this.reset();
+            document.getElementById('costTotal').value = 0;
             switchView('dashboard');
         });
 
-        // 4. Update Owner Data
         document.getElementById('ownerForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            ownerData.workshopName = document.getElementById('set-workshopName').value;
-            ownerData.adminName = document.getElementById('set-adminName').value;
-            localStorage.setItem('tmr_owner', JSON.stringify(ownerData));
-            initApp();
-            alert("Workshop profile updated successfully!");
+            ownerData.workshopName = document.getElementById('set-workshopName').value; ownerData.adminName = document.getElementById('set-adminName').value;
+            ownerData.phone = document.getElementById('set-phone').value; ownerData.taxId = document.getElementById('set-taxId').value;
+            ownerData.email = document.getElementById('set-email').value; ownerData.address = document.getElementById('set-address').value;
+            localStorage.setItem('tmr_owner', JSON.stringify(ownerData)); initApp(); alert("Professional Profile updated successfully!");
         });
 
-        // 5. WhatsApp Generators
         function sendWhatsApp(record) {
-            const message = `*TMR - ${ownerData.workshopName}*\n\nHello ${record.customerName},\nYour ${record.bikeModel} (${record.numberPlate}) service is complete.\n\n*Service Details:*\n📅 Date: ${record.date}\n🛣️ KM Reading: ${record.currentKm} KM\n🔧 Work Done: ${record.workDone}\n💰 Total Cost: ₹${record.cost}\n\n⚠️ *Reminder:* Next service due at *${record.nextKm} KM*.\n\nDrive safe!`;
-            const encodedMessage = encodeURIComponent(message);
-            window.open(`https://wa.me/91${record.customerPhone}?text=${encodedMessage}`, '_blank');
+            const pStatus = getPaymentStatus(record); const pMethod = getPaymentMethod(record);
+            const message = `*${ownerData.workshopName} - Service Summary*\n\nBike: ${record.bikeModel} (${record.numberPlate})\nKM: ${record.currentKm}\n\n*Work Done:*\n${record.workDone}\n\n*Cost Breakdown:*\n⚙️ Parts: ₹${getCostParts(record)}\n🛠️ Labour: ₹${getCostLabour(record)}\n💰 *Total: ₹${getCostTotal(record)}*\n\nStatus: ${pStatus.toUpperCase()} ${pStatus === 'paid' ? '✅' : '⏳'}\nMethod: ${pMethod.toUpperCase()}\n\n⚠️ *Next Service due at ${record.nextKm} KM*\n\nThank you for visiting!`;
+            window.open(`https://wa.me/91${record.customerPhone}?text=${encodeURIComponent(message)}`, '_blank');
         }
 
         function quickWhatsApp(phone, name) {
-            const message = `Hello ${name}, this is ${ownerData.adminName} from ${ownerData.workshopName}.`;
+            const message = `Hello ${name}, this is ${ownerData.adminName} from ${ownerData.workshopName}.`; window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(message)}`, '_blank');
+        }
+
+        function sendReminderWhatsApp(phone, name, model, plate) {
+            const message = `*${ownerData.workshopName} - Service Reminder*\n\nHello ${name},\nIt has been a while since your ${model} (${plate}) was last serviced with us.\n\nRegular servicing keeps your vehicle safe and running smoothly. \n\nPlease visit us soon for a quick checkup!\n\nRegards,\n${ownerData.adminName}`;
             window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(message)}`, '_blank');
         }
 
-        // 6. EDIT & DELETE Logic
         function editRecord(id) {
-            const record = services.find(r => r.id === id);
-            if(!record) return;
-
-            document.getElementById('edit-id').value = record.id;
-            document.getElementById('edit-date').value = record.date;
-            document.getElementById('edit-customerName').value = record.customerName;
-            document.getElementById('edit-customerPhone').value = record.customerPhone;
-            document.getElementById('edit-bikeModel').value = record.bikeModel;
-            document.getElementById('edit-numberPlate').value = record.numberPlate;
-            document.getElementById('edit-currentKm').value = record.currentKm;
-            document.getElementById('edit-cost').value = record.cost;
+            const record = services.find(r => r.id === id); if(!record) return;
+            document.getElementById('edit-id').value = record.id; document.getElementById('edit-date').value = record.date;
+            document.getElementById('edit-customerName').value = record.customerName; document.getElementById('edit-customerPhone').value = record.customerPhone;
+            document.getElementById('edit-bikeModel').value = record.bikeModel; document.getElementById('edit-numberPlate').value = record.numberPlate;
+            document.getElementById('edit-currentKm').value = record.currentKm; document.getElementById('edit-nextKm').value = record.nextKm;
             document.getElementById('edit-workDone').value = record.workDone;
-            document.getElementById('edit-nextKm').value = record.nextKm;
-
+            
+            document.getElementById('edit-costParts').value = getCostParts(record);
+            document.getElementById('edit-costLabour').value = getCostLabour(record);
+            document.getElementById('edit-costTotal').value = getCostTotal(record);
+            document.getElementById('edit-paymentStatus').value = getPaymentStatus(record);
+            document.getElementById('edit-paymentMethod').value = getPaymentMethod(record);
+            
             switchView('edit');
         }
 
         document.getElementById('editForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const id = parseInt(document.getElementById('edit-id').value);
-            const index = services.findIndex(r => r.id === id);
-            
+            e.preventDefault(); const id = parseInt(document.getElementById('edit-id').value); const index = services.findIndex(r => r.id === id);
             if(index !== -1) {
+                const parts = Number(document.getElementById('edit-costParts').value) || 0;
+                const labour = Number(document.getElementById('edit-costLabour').value) || 0;
                 services[index] = {
-                    id: id,
-                    date: document.getElementById('edit-date').value,
-                    customerName: document.getElementById('edit-customerName').value,
-                    customerPhone: document.getElementById('edit-customerPhone').value,
-                    bikeModel: document.getElementById('edit-bikeModel').value,
-                    numberPlate: document.getElementById('edit-numberPlate').value.toUpperCase(),
-                    currentKm: document.getElementById('edit-currentKm').value,
-                    cost: document.getElementById('edit-cost').value,
+                    id: id, date: document.getElementById('edit-date').value,
+                    customerName: document.getElementById('edit-customerName').value, customerPhone: document.getElementById('edit-customerPhone').value,
+                    bikeModel: document.getElementById('edit-bikeModel').value, numberPlate: document.getElementById('edit-numberPlate').value.toUpperCase(),
+                    currentKm: document.getElementById('edit-currentKm').value, nextKm: document.getElementById('edit-nextKm').value,
                     workDone: document.getElementById('edit-workDone').value,
-                    nextKm: document.getElementById('edit-nextKm').value
+                    cost_parts: parts, cost_labour: labour, cost_total: parts + labour,
+                    payment_status: document.getElementById('edit-paymentStatus').value,
+                    payment_method: document.getElementById('edit-paymentMethod').value, profit: labour
                 };
-                saveData();
-                alert("Service updated!");
-                switchView('history');
+                saveData(); alert("Service updated!"); switchView('history');
             }
         });
 
         function deleteEditingRecord() {
             if(confirm("Are you sure you want to delete this specific service record? This cannot be undone.")) {
-                const id = parseInt(document.getElementById('edit-id').value);
-                services = services.filter(r => r.id !== id);
-                saveData();
-                switchView('history');
+                const id = parseInt(document.getElementById('edit-id').value); services = services.filter(r => r.id !== id); saveData(); switchView('history');
             }
         }
 
-        // 7. RENDERING FUNCTIONS
+        function parseDateIndia(dateStr) { const parts = dateStr.split(/[\/\-]/); if(parts.length !== 3) return new Date(); return new Date(parts[2], parts[1] - 1, parts[0]); }
+
+        // --- Rendering ---
         function renderDashboard() {
             document.getElementById('stat-total-services').innerText = services.length;
-            const totalRev = services.reduce((sum, record) => sum + Number(record.cost), 0);
-            document.getElementById('stat-revenue').innerText = `₹${totalRev}`;
-
-            const recentList = document.getElementById('recent-list');
-            recentList.innerHTML = '';
-            const recentServices = services.slice(0, 3);
             
-            if (recentServices.length === 0) {
-                recentList.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">No services yet.</p>`;
-                return;
-            }
+            let totalRev = 0, monthRev = 0, totalProfit = 0, pendingCount = 0, pendingAmount = 0;
+            const todayStr = new Date().toLocaleDateString('en-IN'); const currentMonth = new Date().getMonth(); const currentYear = new Date().getFullYear();
 
+            services.forEach(record => {
+                const cost = getCostTotal(record); totalRev += cost; totalProfit += getProfit(record);
+                if (getPaymentStatus(record) === 'pending') { pendingCount++; pendingAmount += cost; }
+                const parts = record.date.split(/[/-]/);
+                if(parts.length === 3 && (parseInt(parts[1]) - 1) === currentMonth && parseInt(parts[2]) === currentYear) monthRev += cost;
+            });
+
+            document.getElementById('stat-revenue').innerText = `₹${totalRev.toLocaleString('en-IN')}`;
+            document.getElementById('stat-month-revenue').innerText = `₹${monthRev.toLocaleString('en-IN')}`;
+            document.getElementById('stat-total-profit').innerText = `₹${totalProfit.toLocaleString('en-IN')}`;
+
+            const pendingBanner = document.getElementById('pending-payments-banner');
+            if(pendingCount > 0) {
+                document.getElementById('pending-count').innerText = pendingCount;
+                document.getElementById('pending-amount').innerText = pendingAmount.toLocaleString('en-IN');
+                pendingBanner.classList.remove('hidden');
+            } else { pendingBanner.classList.add('hidden'); }
+
+            const uniqueMap = new Map(); services.forEach(r => { if(!uniqueMap.has(r.numberPlate)) uniqueMap.set(r.numberPlate, r); });
+            const now = new Date(); let dueCount = 0;
+            uniqueMap.forEach(record => {
+                const rDate = parseDateIndia(record.date);
+                if((now - rDate) / (1000 * 60 * 60 * 24) > 90) dueCount++;
+            });
+            const reminderBanner = document.getElementById('due-reminders-banner');
+            if(dueCount > 0) { document.getElementById('due-count').innerText = dueCount; reminderBanner.classList.remove('hidden'); } else { reminderBanner.classList.add('hidden'); }
+
+            const recentList = document.getElementById('recent-list'); recentList.innerHTML = ''; const recentServices = services.slice(0, 3);
+            if (recentServices.length === 0) { recentList.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">No services yet.</p>`; return; }
             recentServices.forEach(record => {
+                const badge = getPaymentStatus(record) === 'paid' ? `<div class="w-2 h-2 rounded-full bg-green-500 absolute top-2 right-2"></div>` : `<div class="w-2 h-2 rounded-full bg-yellow-500 absolute top-2 right-2"></div>`;
                 recentList.innerHTML += `
-                    <div onclick="openServiceDetails(${record.id})" class="cursor-pointer bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center hover:shadow-md hover:border-gray-200 transition-all group">
+                    <div onclick="openServiceDetails(${record.id})" class="cursor-pointer bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center hover:shadow-md hover:border-gray-200 transition-all group relative">
+                        ${badge}
                         <div>
                             <p class="font-bold text-gray-800 group-hover:text-black">${record.numberPlate}</p>
                             <p class="text-xs text-gray-500">${record.bikeModel}</p>
                         </div>
                         <div class="text-right">
-                            <p class="font-bold text-gray-800">₹${record.cost}</p>
+                            <p class="font-bold text-gray-800">₹${getCostTotal(record)}</p>
                             <p class="text-[10px] text-gray-400">${record.date}</p>
                         </div>
                     </div>
@@ -561,69 +1079,168 @@
             });
         }
 
-        function renderHistory(filterText = "") {
-            const historyList = document.getElementById('history-list');
-            historyList.innerHTML = '';
-            
-            const filtered = services.filter(r => r.numberPlate.includes(filterText.toUpperCase()) || r.customerPhone.includes(filterText));
+        function renderReminders() {
+            const list = document.getElementById('reminders-list'); list.innerHTML = '';
+            const uniqueMap = new Map(); services.forEach(r => { if(!uniqueMap.has(r.numberPlate)) uniqueMap.set(r.numberPlate, r); });
+            const now = new Date(); const dueList = [];
+            uniqueMap.forEach(record => {
+                const rDate = parseDateIndia(record.date); const diffDays = Math.floor((now - rDate) / (1000 * 60 * 60 * 24));
+                if(diffDays > 90) dueList.push({...record, daysAgo: diffDays});
+            });
+            dueList.sort((a,b) => b.daysAgo - a.daysAgo);
+            if(dueList.length === 0) { list.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">All customers are up to date!</p>`; return; }
 
-            if (filtered.length === 0) {
-                historyList.innerHTML = `<p class="text-sm text-gray-500 ml-4">No records found.</p>`;
-                return;
-            }
+            dueList.forEach(c => {
+                list.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-red-100 flex items-center justify-between">
+                        <div>
+                            <p class="font-bold text-gray-900 text-sm mb-0.5">${c.customerName}</p>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">${c.numberPlate}</span>
+                                <span class="text-xs text-gray-500">${c.bikeModel}</span>
+                            </div>
+                            <p class="text-[10px] text-red-500 font-bold"><i class="fas fa-clock mr-1"></i>Last Service: ${c.daysAgo} days ago</p>
+                        </div>
+                        <button onclick="sendReminderWhatsApp('${c.customerPhone}', '${c.customerName}', '${c.bikeModel}', '${c.numberPlate}')" class="w-10 h-10 bg-red-50 text-red-600 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition shadow-sm border border-red-100"><i class="fab fa-whatsapp text-lg"></i></button>
+                    </div>
+                `;
+            });
+        }
 
-            filtered.forEach(record => {
-                historyList.innerHTML += `
-                    <div class="relative pl-6">
-                        <div class="absolute w-3 h-3 bg-black rounded-full -left-[7px] top-1.5 border-2 border-white shadow-sm"></div>
-                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                            <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <span class="bg-gray-100 text-gray-800 text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wide">${record.numberPlate}</span>
-                                    <p class="text-sm font-bold mt-1.5">${record.customerName}</p>
-                                </div>
-                                <div class="text-right flex flex-col items-end">
-                                    <p class="text-[10px] font-semibold text-gray-400">${record.date}</p>
-                                    <button onclick="editRecord(${record.id})" class="mt-1 w-7 h-7 bg-gray-50 text-gray-600 rounded-full flex items-center justify-center hover:bg-gray-200 transition">
-                                        <i class="fas fa-pencil-alt text-xs"></i>
-                                    </button>
-                                </div>
+        function renderPending() {
+            const list = document.getElementById('pending-list'); list.innerHTML = '';
+            const pendingList = services.filter(s => getPaymentStatus(s) === 'pending');
+            if(pendingList.length === 0) { list.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">Hooray! No pending payments.</p>`; return; }
+
+            pendingList.forEach(c => {
+                list.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-yellow-200 flex items-center justify-between">
+                        <div>
+                            <p class="font-bold text-gray-900 text-sm mb-0.5">${c.customerName}</p>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">${c.numberPlate}</span>
+                                <span class="text-xs text-gray-500">${c.date}</span>
                             </div>
-                            <p class="text-sm text-gray-600 mb-3 bg-gray-50 p-2 rounded-lg"><strong>Work:</strong> ${record.workDone}</p>
-                            <div class="flex justify-between items-center border-t border-gray-100 pt-3">
-                                <p class="text-xs text-red-500 font-semibold"><i class="fas fa-bell mr-1"></i> Next: ${record.nextKm} KM</p>
-                                <p class="text-sm font-bold text-gray-900">₹${record.cost}</p>
-                            </div>
+                            <p class="text-sm text-yellow-700 font-black">₹${getCostTotal(c)}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="quickWhatsApp('${c.customerPhone}', '${c.customerName}')" class="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center hover:bg-green-500 hover:text-white transition shadow-sm border border-green-100"><i class="fab fa-whatsapp text-lg"></i></button>
+                            <button onclick="openServiceDetails(${c.id})" class="w-10 h-10 bg-gray-50 text-gray-600 rounded-full flex items-center justify-center hover:bg-black hover:text-white transition shadow-sm border border-gray-200"><i class="fas fa-eye text-sm"></i></button>
                         </div>
                     </div>
                 `;
             });
         }
 
-        function filterHistory() { renderHistory(document.getElementById('searchPlate').value); }
+        function renderRevenueDetails() {
+            let todayRev = 0, todayCount = 0, weekRev = 0, weekCount = 0, monthRev = 0, monthCount = 0, yearRev = 0, yearCount = 0, allTimeRev = 0, allTimeCount = services.length;
+            const now = new Date(); const tDay = now.getDate(); const tMonth = now.getMonth(); const tYear = now.getFullYear();
+            const todayStart = new Date(tYear, tMonth, tDay);
 
-        function renderCustomers() {
-            const list = document.getElementById('customers-list');
-            const searchText = document.getElementById('searchCustomer').value.toLowerCase();
-            list.innerHTML = '';
-
-            const uniqueMap = new Map();
-            services.forEach(r => {
-                if(!uniqueMap.has(r.numberPlate)) {
-                    uniqueMap.set(r.numberPlate, r);
+            services.forEach(record => {
+                const cost = getCostTotal(record); allTimeRev += cost;
+                const parts = record.date.split(/[/-]/);
+                if(parts.length === 3) {
+                    const rDay = parseInt(parts[0]); const rMonth = parseInt(parts[1]) - 1; const rYear = parseInt(parts[2]); const rDate = new Date(rYear, rMonth, rDay);
+                    if (rDay === tDay && rMonth === tMonth && rYear === tYear) { todayRev += cost; todayCount++; }
+                    if (rMonth === tMonth && rYear === tYear) { monthRev += cost; monthCount++; }
+                    if (rYear === tYear) { yearRev += cost; yearCount++; }
+                    const diffDays = (todayStart - rDate) / (1000 * 60 * 60 * 24);
+                    if (diffDays >= -1 && diffDays <= 7) { weekRev += cost; weekCount++; }
                 }
             });
 
-            const uniqueCustomers = Array.from(uniqueMap.values()).filter(c => 
-                c.customerName.toLowerCase().includes(searchText) || 
-                c.bikeModel.toLowerCase().includes(searchText) ||
-                c.numberPlate.toLowerCase().includes(searchText)
-            );
+            const avgRev = allTimeCount > 0 ? Math.round(allTimeRev / allTimeCount) : 0;
+            const uniquePhones = new Set(services.map(s => s.customerPhone)).size;
+            const repeatRate = allTimeCount > 0 ? Math.round(((allTimeCount - uniquePhones) / allTimeCount) * 100) : 0;
 
-            if(uniqueCustomers.length === 0) {
-                list.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">No customers found.</p>`;
-                return;
-            }
+            document.getElementById('revenue-insights-content').innerHTML = `
+                <div class="bg-gradient-to-br from-[#25D366] to-green-700 text-white p-6 rounded-3xl shadow-lg mb-4 relative overflow-hidden">
+                    <i class="fas fa-chart-pie absolute -right-4 -bottom-4 text-8xl opacity-10"></i>
+                    <p class="text-green-100 text-xs font-bold uppercase tracking-wider mb-1">Total All-Time</p>
+                    <h3 class="text-4xl font-black mb-3">₹${allTimeRev.toLocaleString('en-IN')}</h3>
+                    <div class="inline-flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg text-sm font-semibold backdrop-blur-sm">
+                        <i class="fas fa-wrench"></i> ${allTimeCount} Total Services
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                        <div class="w-8 h-8 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center absolute top-4 right-4"><i class="fas fa-calendar-day text-xs"></i></div>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Today</p>
+                        <h4 class="text-xl font-black text-gray-900">₹${todayRev.toLocaleString('en-IN')}</h4>
+                        <p class="text-[10px] text-gray-400 mt-2 font-semibold">${todayCount} Services</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                        <div class="w-8 h-8 bg-purple-50 text-purple-500 rounded-full flex items-center justify-center absolute top-4 right-4"><i class="fas fa-calendar-week text-xs"></i></div>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Last 7 Days</p>
+                        <h4 class="text-xl font-black text-gray-900">₹${weekRev.toLocaleString('en-IN')}</h4>
+                        <p class="text-[10px] text-gray-400 mt-2 font-semibold">${weekCount} Services</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                        <div class="w-8 h-8 bg-pink-50 text-pink-500 rounded-full flex items-center justify-center absolute top-4 right-4"><i class="fas fa-calendar-alt text-xs"></i></div>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">This Month</p>
+                        <h4 class="text-xl font-black text-gray-900">₹${monthRev.toLocaleString('en-IN')}</h4>
+                        <p class="text-[10px] text-gray-400 mt-2 font-semibold">${monthCount} Services</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                        <div class="w-8 h-8 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center absolute top-4 right-4"><i class="fas fa-users text-xs"></i></div>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Repeat Rate</p>
+                        <h4 class="text-xl font-black text-gray-900">${repeatRate}%</h4>
+                        <p class="text-[10px] text-gray-400 mt-2 font-semibold">Returning Customers</p>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-r from-gray-900 to-black p-5 rounded-2xl shadow-md flex items-center justify-between text-white">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-gray-800 text-gray-300 rounded-full flex items-center justify-center border border-gray-700"><i class="fas fa-calculator text-lg"></i></div>
+                        <div><p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Avg. Order Value</p><p class="text-xs text-gray-500 mt-0.5">Per Service Average</p></div>
+                    </div>
+                    <h4 class="text-2xl font-black text-white">₹${avgRev.toLocaleString('en-IN')}</h4>
+                </div>
+            `;
+        }
+
+        function renderHistory(filterText = "") {
+            const historyList = document.getElementById('history-list'); historyList.innerHTML = '';
+            const filtered = services.filter(r => r.numberPlate.includes(filterText.toUpperCase()) || r.customerPhone.includes(filterText));
+            if (filtered.length === 0) { historyList.innerHTML = `<p class="text-sm text-gray-500 ml-4">No records found.</p>`; return; }
+
+            filtered.forEach(record => {
+                const statusHtml = getPaymentStatus(record) === 'paid' 
+                    ? `<span class="bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Paid</span>` 
+                    : `<span class="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Pending</span>`;
+
+                historyList.innerHTML += `
+                    <div class="relative pl-6">
+                        <div class="absolute w-3 h-3 bg-black rounded-full -left-[7px] top-1.5 border-2 border-white shadow-sm"></div>
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <span class="bg-gray-100 text-gray-800 text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wide mr-1">${record.numberPlate}</span>
+                                    ${statusHtml}
+                                    <p class="text-sm font-bold mt-1.5">${record.customerName}</p>
+                                </div>
+                                <div class="text-right flex flex-col items-end">
+                                    <p class="text-[10px] font-semibold text-gray-400">${record.date}</p>
+                                    <button onclick="editRecord(${record.id})" class="mt-1 w-7 h-7 bg-gray-50 text-gray-600 rounded-full flex items-center justify-center hover:bg-gray-200 transition"><i class="fas fa-pencil-alt text-xs"></i></button>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-3 bg-gray-50 p-2 rounded-lg"><strong>Work:</strong> ${record.workDone}</p>
+                            <div class="flex justify-between items-center border-t border-gray-100 pt-3">
+                                <p class="text-xs text-red-500 font-semibold"><i class="fas fa-bell mr-1"></i> Next: ${record.nextKm} KM</p>
+                                <p class="text-sm font-bold text-gray-900">₹${getCostTotal(record)}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        function filterHistory() { renderHistory(document.getElementById('searchPlate').value); }
+
+        function renderCustomers() {
+            const list = document.getElementById('customers-list'); const searchText = document.getElementById('searchCustomer').value.toLowerCase(); list.innerHTML = '';
+            const uniqueMap = new Map(); services.forEach(r => { if(!uniqueMap.has(r.numberPlate)) uniqueMap.set(r.numberPlate, r); });
+            const uniqueCustomers = Array.from(uniqueMap.values()).filter(c => c.customerName.toLowerCase().includes(searchText) || c.bikeModel.toLowerCase().includes(searchText) || c.numberPlate.toLowerCase().includes(searchText));
+            if(uniqueCustomers.length === 0) { list.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">No customers found.</p>`; return; }
 
             uniqueCustomers.forEach(c => {
                 list.innerHTML += `
@@ -644,48 +1261,26 @@
             });
         }
 
-        // 8. DATA MANAGEMENT
-        function saveData() { localStorage.setItem('tmr_services', JSON.stringify(services)); }
-
+        function saveData() { 
+            localStorage.setItem('tmr_services', JSON.stringify(services)); 
+            updateNotificationBadge();
+        }
         function exportData() {
-            if(services.length === 0) return alert("No data to export!");
-            const dataStr = JSON.stringify(services);
+            if(services.length === 0) return alert("No data to export!"); const dataStr = JSON.stringify(services);
             const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-            let link = document.createElement('a');
-            link.setAttribute('href', dataUri);
-            link.setAttribute('download', `TMR_Backup_${new Date().toLocaleDateString('en-IN').replace(/\//g, '-')}.json`);
-            link.click();
+            let link = document.createElement('a'); link.setAttribute('href', dataUri);
+            link.setAttribute('download', `TMR_Backup_${new Date().toLocaleDateString('en-IN').replace(/\//g, '-')}.json`); link.click();
         }
-
         function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
+            const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
             reader.onload = function(e) {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    if(Array.isArray(importedData)) {
-                        services = importedData;
-                        saveData();
-                        alert("Data restored successfully!");
-                        switchView('dashboard');
-                    }
-                } catch (error) { alert("Invalid backup file."); }
-            };
-            reader.readAsText(file);
+                try { const importedData = JSON.parse(e.target.result); if(Array.isArray(importedData)) { services = importedData; saveData(); alert("Data restored successfully!"); switchView('dashboard'); } } 
+                catch (error) { alert("Invalid backup file."); }
+            }; reader.readAsText(file);
         }
+        function clearData() { if(confirm("DANGER: Are you sure you want to delete ALL data? Make sure you exported a backup first!")) { localStorage.removeItem('tmr_services'); services = []; switchView('dashboard'); alert("All data deleted."); } }
 
-        function clearData() {
-            if(confirm("DANGER: Are you sure you want to delete ALL data? Make sure you exported a backup first!")) {
-                localStorage.removeItem('tmr_services');
-                services =switchView('dashboard');
-                alert("All data deleted.");
-            }
-        }
-
-        // Initialize App
         renderDashboard();
-
     </script>
 </body>
-  </html>
+                                                     </html>
