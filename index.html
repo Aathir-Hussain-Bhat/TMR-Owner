@@ -23,8 +23,8 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { display: none; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-        /* Hide invoice template from UI but keep it renderable for html2pdf. Set to exactly 800px for A4 fit */
-        #invoice-template-container { position: absolute; left: -9999px; top: -9999px; width: 800px; background: white; z-index: -1; }
+        /* Hide invoice template from UI but keep it renderable for html2pdf. Set to exactly 800px for A4 fit. Text size adjust prevents mobile zooming. */
+        #invoice-template-container { position: absolute; left: -9999px; top: -9999px; width: 800px; background: white; z-index: -1; -webkit-text-size-adjust: none; text-size-adjust: none; }
         .watermark { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); opacity: 0.04; width: 400px; pointer-events: none; z-index: 0; }
     </style>
 </head>
@@ -210,9 +210,9 @@
         </div>
     </div>
 
-    <!-- HIDDEN PREMIUM PDF INVOICE TEMPLATE (Fix Applied: exactly 800px width) -->
+    <!-- HIDDEN PREMIUM PDF INVOICE TEMPLATE -->
     <div id="invoice-template-container">
-        <div id="invoice-template" class="bg-white relative" style="width: 800px; min-height: 1131px; max-width: 800px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; overflow: hidden;">
+        <div id="invoice-template" class="bg-white relative" style="width: 800px; min-height: 1131px; max-width: 800px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; overflow: hidden; -webkit-text-size-adjust: none; text-size-adjust: none;">
             
             <!-- Dynamic Watermark -->
             <img id="inv-watermark" src="" class="watermark hidden" alt="watermark">
@@ -890,7 +890,7 @@
             overlay.classList.add('opacity-0'); content.classList.add('translate-y-full', 'scale-95'); setTimeout(() => overlay.classList.add('hidden'), 300);
         }
 
-        // PREMIUM PDF DOWNLOAD LOGIC with windowWidth configuration fix
+        // PREMIUM PDF DOWNLOAD LOGIC
         function downloadPDF(record, autoWhatsApp = false) {
             document.getElementById('inv-date').innerText = record.date;
             document.getElementById('inv-id').innerText = `INV-${record.id.toString().slice(-6)}`;
@@ -910,13 +910,12 @@
 
             const element = document.getElementById('invoice-template');
             
-            // KEY FIX: Added `windowWidth: 800` so mobile devices don't crop the PDF horizontally.
             const opt = { 
                 margin: 0, 
                 filename: `${ownerData.workshopName}_Invoice_${record.numberPlate}_${record.date.replace(/\//g, '-')}.pdf`, 
                 image: { type: 'jpeg', quality: 0.98 }, 
-                html2canvas: { scale: 2, useCORS: true, windowWidth: 800, width: 800 }, 
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } 
+                html2canvas: { scale: 2, useCORS: true, windowWidth: 800, width: 800, scrollX: 0, scrollY: 0 }, 
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
             };
             
             const btn = document.getElementById(autoWhatsApp ? 'saveSendBtn' : 'sd-pdf-btn'); 
