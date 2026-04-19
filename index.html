@@ -23,8 +23,8 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { display: none; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-        /* Hide invoice template from UI but keep it renderable for html2pdf */
-        #invoice-template-container { position: absolute; left: -9999px; top: -9999px; width: 850px; background: white; z-index: -1; }
+        /* Hide invoice template from UI but keep it renderable for html2pdf. Set to exactly 800px for A4 fit */
+        #invoice-template-container { position: absolute; left: -9999px; top: -9999px; width: 800px; background: white; z-index: -1; }
         .watermark { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); opacity: 0.04; width: 400px; pointer-events: none; z-index: 0; }
     </style>
 </head>
@@ -210,9 +210,9 @@
         </div>
     </div>
 
-    <!-- HIDDEN PREMIUM PDF INVOICE TEMPLATE -->
+    <!-- HIDDEN PREMIUM PDF INVOICE TEMPLATE (Fix Applied: exactly 800px width) -->
     <div id="invoice-template-container">
-        <div id="invoice-template" class="bg-white relative" style="width: 850px; min-height: 1122px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+        <div id="invoice-template" class="bg-white relative" style="width: 800px; min-height: 1131px; max-width: 800px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; overflow: hidden;">
             
             <!-- Dynamic Watermark -->
             <img id="inv-watermark" src="" class="watermark hidden" alt="watermark">
@@ -299,7 +299,7 @@
                         <tbody>
                             <tr class="bg-white">
                                 <td id="inv-workDone" class="py-6 px-6 text-slate-700 whitespace-pre-wrap leading-relaxed align-top border-r border-gray-100 text-sm font-medium">Work description</td>
-                                <td class="py-6 px-6 align-top bg-gray-50/50">
+                                <td class="py-6 px-6 align-top bg-gray-50/50 min-w-[200px]">
                                     <div class="flex justify-between text-sm text-slate-600 mb-2 font-medium"><span>Spare Parts</span><span>₹<span id="inv-parts"></span></span></div>
                                     <div class="flex justify-between text-sm text-slate-600 mb-4 pb-4 border-b border-gray-200 font-medium"><span>Labour Charges</span><span>₹<span id="inv-labour"></span></span></div>
                                     <div class="flex justify-between items-end">
@@ -323,7 +323,7 @@
                     </div>
                     <div class="w-1/3 text-right">
                         <p class="text-sm text-slate-500 font-bold uppercase tracking-widest mb-2">Grand Total</p>
-                        <h3 id="inv-total" class="text-6xl font-black text-slate-900 tracking-tighter">₹0</h3>
+                        <h3 id="inv-total" class="text-6xl font-black text-slate-900 tracking-tighter truncate">₹0</h3>
                     </div>
                 </div>
 
@@ -698,7 +698,7 @@
             document.getElementById('profile-display-name').innerText = ownerData.workshopName;
             document.getElementById('profile-display-admin').innerText = ownerData.adminName;
             
-            // Setup Form Population (in case they reopen it somehow, or re-init)
+            // Setup Form Population
             document.getElementById('setup-workshopName').value = ownerData.workshopName; document.getElementById('setup-adminName').value = ownerData.adminName;
             document.getElementById('setup-phone').value = ownerData.phone; document.getElementById('setup-email').value = ownerData.email;
             document.getElementById('setup-address').value = ownerData.address; document.getElementById('setup-website').value = ownerData.website;
@@ -890,7 +890,7 @@
             overlay.classList.add('opacity-0'); content.classList.add('translate-y-full', 'scale-95'); setTimeout(() => overlay.classList.add('hidden'), 300);
         }
 
-        // PREMIUM PDF DOWNLOAD LOGIC
+        // PREMIUM PDF DOWNLOAD LOGIC with windowWidth configuration fix
         function downloadPDF(record, autoWhatsApp = false) {
             document.getElementById('inv-date').innerText = record.date;
             document.getElementById('inv-id').innerText = `INV-${record.id.toString().slice(-6)}`;
@@ -909,7 +909,15 @@
             document.getElementById('inv-method').innerText = getPaymentMethod(record);
 
             const element = document.getElementById('invoice-template');
-            const opt = { margin: 0, filename: `${ownerData.workshopName}_Invoice_${record.numberPlate}_${record.date.replace(/\//g, '-')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
+            
+            // KEY FIX: Added `windowWidth: 800` so mobile devices don't crop the PDF horizontally.
+            const opt = { 
+                margin: 0, 
+                filename: `${ownerData.workshopName}_Invoice_${record.numberPlate}_${record.date.replace(/\//g, '-')}.pdf`, 
+                image: { type: 'jpeg', quality: 0.98 }, 
+                html2canvas: { scale: 2, useCORS: true, windowWidth: 800, width: 800 }, 
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } 
+            };
             
             const btn = document.getElementById(autoWhatsApp ? 'saveSendBtn' : 'sd-pdf-btn'); 
             const originalText = btn.innerHTML;
@@ -931,9 +939,8 @@
 
         // Handle Save and Send workflow
         function handleSaveAndSend() {
-            // Check form validity
             if(!document.getElementById('serviceForm').checkValidity()) {
-                document.getElementById('realSubmitBtn').click(); // trigger native HTML5 validation UI
+                document.getElementById('realSubmitBtn').click(); 
                 return;
             }
 
@@ -941,27 +948,20 @@
             const labour = Number(document.getElementById('costLabour').value) || 0;
             
             const record = {
-                id: Date.now(),
-                date: new Date().toLocaleDateString('en-IN'),
+                id: Date.now(), date: new Date().toLocaleDateString('en-IN'),
                 customerName: document.getElementById('customerName').value, customerPhone: document.getElementById('customerPhone').value,
                 bikeModel: document.getElementById('bikeModel').value, numberPlate: document.getElementById('numberPlate').value.toUpperCase(),
                 currentKm: document.getElementById('currentKm').value, nextKm: document.getElementById('nextKm').value,
                 workDone: document.getElementById('workDone').value,
                 cost_parts: parts, cost_labour: labour, cost_total: parts + labour,
-                payment_status: document.getElementById('paymentStatus').value, payment_method: document.getElementById('paymentMethod').value,
-                profit: labour
+                payment_status: document.getElementById('paymentStatus').value, payment_method: document.getElementById('paymentMethod').value, profit: labour
             };
             
             services.unshift(record); saveData(); 
-            // Triggers PDF Download FIRST, then opens WhatsApp inside the promise
             downloadPDF(record, true);
         }
 
-        document.getElementById('serviceForm').addEventListener('submit', function(e) {
-            e.preventDefault(); 
-            // Normal submit is hijacked by handleSaveAndSend, but if triggered via enter key:
-            handleSaveAndSend();
-        });
+        document.getElementById('serviceForm').addEventListener('submit', function(e) { e.preventDefault(); handleSaveAndSend(); });
 
         function switchView(viewName) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
@@ -991,14 +991,8 @@
             window.open(`https://wa.me/91${record.customerPhone}?text=${encodeURIComponent(message)}`, '_blank');
         }
 
-        function quickWhatsApp(phone, name) {
-            const message = `Hello ${name}, this is ${ownerData.adminName} from ${ownerData.workshopName}.`; window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(message)}`, '_blank');
-        }
-
-        function sendReminderWhatsApp(phone, name, model, plate) {
-            const message = `*${ownerData.workshopName} - Maintenance Alert*\n\nHello ${name},\nIt has been a while since your ${model} (${plate}) was last serviced.\n\nRegular servicing keeps your vehicle safe and prevents costly repairs. \n\nPlease visit us soon for a quick checkup!\n\nRegards,\n${ownerData.adminName}`;
-            window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(message)}`, '_blank');
-        }
+        function quickWhatsApp(phone, name) { const message = `Hello ${name}, this is ${ownerData.adminName} from ${ownerData.workshopName}.`; window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(message)}`, '_blank'); }
+        function sendReminderWhatsApp(phone, name, model, plate) { const message = `*${ownerData.workshopName} - Maintenance Alert*\n\nHello ${name},\nIt has been a while since your ${model} (${plate}) was last serviced.\n\nRegular servicing keeps your vehicle safe and prevents costly repairs. \n\nPlease visit us soon for a quick checkup!\n\nRegards,\n${ownerData.adminName}`; window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(message)}`, '_blank'); }
 
         function editRecord(id) {
             const record = services.find(r => r.id === id); if(!record) return;
@@ -1033,7 +1027,6 @@
         function deleteEditingRecord() { if(confirm("Are you sure you want to delete this specific service record? This cannot be undone.")) { const id = parseInt(document.getElementById('edit-id').value); services = services.filter(r => r.id !== id); saveData(); switchView('history'); } }
         function parseDateIndia(dateStr) { const parts = dateStr.split(/[\/\-]/); if(parts.length !== 3) return new Date(); return new Date(parts[2], parts[1] - 1, parts[0]); }
 
-        // --- Rendering ---
         function renderDashboard() {
             document.getElementById('stat-total-services').innerText = services.length;
             let totalRev = 0, monthRev = 0, totalProfit = 0, pendingCount = 0, pendingAmount = 0;
@@ -1202,4 +1195,4 @@
         renderDashboard();
     </script>
 </body>
-    </html>
+</html>
