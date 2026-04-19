@@ -24,7 +24,8 @@
         ::-webkit-scrollbar { display: none; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         /* Hide invoice template from UI but keep it renderable for html2pdf */
-        #invoice-template-container { position: absolute; left: -9999px; top: -9999px; width: 800px; background: white; z-index: -1; }
+        #invoice-template-container { position: absolute; left: -9999px; top: -9999px; width: 850px; background: white; z-index: -1; }
+        .watermark { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); opacity: 0.04; width: 400px; pointer-events: none; z-index: 0; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 pb-24">
@@ -39,26 +40,90 @@
         <div class="mt-10 w-6 h-6 border-2 border-gray-100 border-t-black rounded-full animate-spin"></div>
     </div>
 
-    <!-- SETUP / LOGIN SCREEN -->
-    <div id="setup-screen" class="fixed inset-0 bg-white z-[55] flex flex-col items-center justify-center hidden">
-        <div class="w-full max-w-sm p-6">
-            <div class="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mb-6 shadow-lg mx-auto">
-                <i class="fas fa-motorcycle text-white text-3xl"></i>
+    <!-- SETUP / LOGIN SCREEN (PREMIUM OVERHAUL) -->
+    <div id="setup-screen" class="fixed inset-0 bg-gray-50 z-[55] overflow-y-auto hidden">
+        <div class="w-full max-w-md mx-auto p-6 pb-12">
+            <div class="text-center mt-6 mb-8">
+                <h1 class="text-3xl font-extrabold tracking-tight text-gray-900">Brand Setup</h1>
+                <p class="text-sm text-gray-500 mt-2">Build your professional workshop profile</p>
             </div>
-            <h1 class="text-3xl font-extrabold tracking-tight text-gray-900 text-center mb-2">Welcome to TMR</h1>
-            <p class="text-sm text-gray-500 text-center mb-8">Setup your workshop profile to continue</p>
             
-            <form id="setupForm" class="space-y-5">
-                <div class="space-y-2">
-                    <label class="text-sm font-semibold text-gray-600">Workshop Name</label>
-                    <input type="text" id="setup-workshopName" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 outline-none focus:border-black placeholder-gray-400 focus:bg-white transition" placeholder="e.g. Bhat care">
+            <form id="setupForm" class="space-y-6 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                
+                <!-- Logo Upload -->
+                <div class="flex flex-col items-center justify-center mb-4">
+                    <div class="relative group cursor-pointer" onclick="document.getElementById('setup-logoUpload').click()">
+                        <div id="setup-logo-placeholder" class="w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-3xl hover:bg-gray-200 transition">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                        <img id="setup-logo-preview" src="" alt="Logo Preview" class="w-24 h-24 rounded-full object-cover border-2 border-gray-200 shadow-sm hidden">
+                        <div class="absolute bottom-0 right-0 bg-black text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                            <i class="fas fa-plus text-xs"></i>
+                        </div>
+                    </div>
+                    <input type="file" id="setup-logoUpload" accept="image/*" class="hidden">
+                    <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mt-3">Upload Workshop Logo</p>
                 </div>
-                <div class="space-y-2">
-                    <label class="text-sm font-semibold text-gray-600">Admin/Owner Name</label>
-                    <input type="text" id="setup-adminName" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 outline-none focus:border-black placeholder-gray-400 focus:bg-white transition" placeholder="e.g. Bhat">
+
+                <!-- Basic Info -->
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Basic Identity</h3>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-600">Workshop Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="setup-workshopName" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 outline-none focus:border-black transition text-sm font-semibold">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-600">Owner/Admin Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="setup-adminName" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 outline-none focus:border-black transition text-sm">
+                    </div>
                 </div>
-                <button type="submit" class="w-full bg-black text-white font-bold rounded-lg py-4 mt-4 shadow-md hover:bg-gray-800 transition flex items-center justify-center gap-2">
-                    Get Started <i class="fas fa-arrow-right"></i>
+
+                <!-- Contact & Location -->
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Contact & Location</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-bold text-gray-600">Phone No. <span class="text-red-500">*</span></label>
+                            <input type="number" id="setup-phone" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 outline-none focus:border-black transition text-sm">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-bold text-gray-600">Email (Optional)</label>
+                            <input type="email" id="setup-email" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 outline-none focus:border-black transition text-sm">
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-1.5 relative">
+                        <div class="flex justify-between items-end">
+                            <label class="text-xs font-bold text-gray-600">Full Address <span class="text-red-500">*</span></label>
+                            <button type="button" onclick="autoDetectLocation('setup-address', this)" class="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded font-bold hover:bg-blue-100 transition flex items-center gap-1">
+                                <i class="fas fa-location-arrow"></i> Auto Detect
+                            </button>
+                        </div>
+                        <textarea id="setup-address" rows="3" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 outline-none focus:border-black transition text-sm" placeholder="e.g. 123 Garage Street, City..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Digital Presence -->
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Digital Presence</h3>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-600"><i class="fas fa-globe mr-1"></i> Website URL</label>
+                        <input type="url" id="setup-website" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 outline-none focus:border-black transition text-sm" placeholder="https://...">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-bold text-gray-600"><i class="fab fa-instagram text-pink-500 mr-1"></i> Instagram</label>
+                            <input type="text" id="setup-insta" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 outline-none focus:border-black transition text-sm" placeholder="@handle">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-bold text-gray-600"><i class="fab fa-facebook text-blue-600 mr-1"></i> Facebook</label>
+                            <input type="text" id="setup-fb" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 outline-none focus:border-black transition text-sm" placeholder="Page link/name">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-gray-900 to-black text-white font-black rounded-xl py-4 mt-6 shadow-xl hover:scale-[1.02] transition transform flex items-center justify-center gap-2">
+                    Launch Workshop <i class="fas fa-rocket"></i>
                 </button>
             </form>
         </div>
@@ -74,11 +139,9 @@
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <!-- Creator Icon -->
             <button onclick="openCreatorWall()" class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition text-gray-600 hover:text-black shadow-sm">
                 <i class="fas fa-code text-sm"></i>
             </button>
-            <!-- Notification Icon (Now Functional) -->
             <div onclick="openNotifications()" class="relative w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center shadow-sm cursor-pointer hover:bg-gray-200 transition">
                 <i class="fas fa-bell text-gray-500 text-sm"></i>
                 <span id="notif-badge" class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full hidden"></span>
@@ -86,54 +149,40 @@
         </div>
     </header>
 
-    <!-- OVERLAY: NOTIFICATIONS -->
+    <!-- OVERLAYS (Notifications & Creator Wall) -->
     <div id="notif-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-start justify-center hidden opacity-0 transition-opacity duration-300 pt-20 sm:items-center sm:pt-0">
         <div class="bg-white rounded-3xl w-11/12 max-w-sm p-6 relative transform scale-95 transition-transform duration-300 shadow-2xl" id="notif-content">
             <button onclick="closeNotifications()" class="absolute top-4 right-4 w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-500 hover:text-black hover:bg-gray-100 transition">
                 <i class="fas fa-times"></i>
             </button>
             <h2 class="text-xl font-extrabold text-gray-900 mb-4 border-b border-gray-100 pb-3">Notifications</h2>
-            <div id="notif-list" class="space-y-3 max-h-[60vh] overflow-y-auto">
-                <!-- Injected by JS -->
-            </div>
+            <div id="notif-list" class="space-y-3 max-h-[60vh] overflow-y-auto"></div>
         </div>
     </div>
 
-    <!-- OVERLAY: CREATOR WALL -->
     <div id="creator-wall-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-3xl w-11/12 max-w-sm p-6 relative transform scale-95 transition-transform duration-300 shadow-2xl" id="creator-wall-content">
-            <button onclick="closeCreatorWall()" class="absolute top-4 right-4 w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-500 hover:text-black hover:bg-gray-100 transition">
-                <i class="fas fa-times"></i>
-            </button>
-            
+            <button onclick="closeCreatorWall()" class="absolute top-4 right-4 w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-500 hover:text-black hover:bg-gray-100 transition"><i class="fas fa-times"></i></button>
             <div class="text-center mb-6 mt-2">
-                <div class="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-lg border-4 border-gray-100">
-                    <i class="fas fa-user-ninja"></i>
-                </div>
+                <div class="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-lg border-4 border-gray-100"><i class="fas fa-user-ninja"></i></div>
                 <h2 class="text-2xl font-black tracking-tight text-gray-900">BHAT BOYKA</h2>
                 <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Creator & Developer</p>
             </div>
-            
             <div class="space-y-3">
                 <a href="https://youtube.com/@aathir_hussain_bhat.?si=28tBVXAnqc0qJfAQ" target="_blank" class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-red-50 hover:text-red-600 transition group border border-transparent hover:border-red-100">
-                    <i class="fab fa-youtube text-xl text-gray-400 group-hover:text-red-600 w-6 text-center"></i>
-                    <span class="font-bold text-sm text-gray-700 group-hover:text-red-600">YouTube</span>
+                    <i class="fab fa-youtube text-xl text-gray-400 group-hover:text-red-600 w-6 text-center"></i><span class="font-bold text-sm text-gray-700 group-hover:text-red-600">YouTube</span>
                 </a>
                 <a href="https://share.google/05cqDTY08eQEp74MH" target="_blank" class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-pink-50 hover:text-pink-600 transition group border border-transparent hover:border-pink-100">
-                    <i class="fab fa-instagram text-xl text-gray-400 group-hover:text-pink-600 w-6 text-center"></i>
-                    <span class="font-bold text-sm text-gray-700 group-hover:text-pink-600">Instagram</span>
+                    <i class="fab fa-instagram text-xl text-gray-400 group-hover:text-pink-600 w-6 text-center"></i><span class="font-bold text-sm text-gray-700 group-hover:text-pink-600">Instagram</span>
                 </a>
                 <a href="https://share.google/jWLCjCdUvzcd360cx" target="_blank" class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition group border border-transparent hover:border-blue-100">
-                    <i class="fab fa-facebook text-xl text-gray-400 group-hover:text-blue-600 w-6 text-center"></i>
-                    <span class="font-bold text-sm text-gray-700 group-hover:text-blue-600">Facebook</span>
+                    <i class="fab fa-facebook text-xl text-gray-400 group-hover:text-blue-600 w-6 text-center"></i><span class="font-bold text-sm text-gray-700 group-hover:text-blue-600">Facebook</span>
                 </a>
                 <a href="https://x.com/bhatboyka" target="_blank" class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-gray-200 transition group border border-transparent hover:border-gray-300">
-                    <i class="fab fa-x-twitter text-xl text-gray-400 group-hover:text-black w-6 text-center"></i>
-                    <span class="font-bold text-sm text-gray-700 group-hover:text-black">X (Twitter)</span>
+                    <i class="fab fa-x-twitter text-xl text-gray-400 group-hover:text-black w-6 text-center"></i><span class="font-bold text-sm text-gray-700 group-hover:text-black">X (Twitter)</span>
                 </a>
                 <a href="https://github.com/Aathir-Hussain-Bhat" target="_blank" class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-gray-200 transition group border border-transparent hover:border-gray-300">
-                    <i class="fab fa-github text-xl text-gray-400 group-hover:text-black w-6 text-center"></i>
-                    <span class="font-bold text-sm text-gray-700 group-hover:text-black">GitHub</span>
+                    <i class="fab fa-github text-xl text-gray-400 group-hover:text-black w-6 text-center"></i><span class="font-bold text-sm text-gray-700 group-hover:text-black">GitHub</span>
                 </a>
             </div>
         </div>
@@ -143,19 +192,12 @@
     <div id="service-details-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:w-11/12 sm:max-w-md p-6 relative transform translate-y-full sm:translate-y-0 sm:scale-95 transition-all duration-300 shadow-2xl overflow-y-auto max-h-[90vh]" id="service-details-content">
             <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-5 sm:hidden"></div>
-            
-            <button onclick="closeServiceDetails()" class="absolute top-5 right-5 w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-500 hover:text-black transition">
-                <i class="fas fa-times"></i>
-            </button>
-            
+            <button onclick="closeServiceDetails()" class="absolute top-5 right-5 w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-500 hover:text-black transition"><i class="fas fa-times"></i></button>
             <div class="flex justify-between items-center mb-5 border-b border-gray-100 pb-4">
                 <h2 class="text-lg font-extrabold text-gray-900">Service Details</h2>
                 <div id="sd-payment-badge"></div>
             </div>
-            
-            <!-- Injected by JS -->
             <div id="sd-content" class="space-y-4"></div>
-            
             <div class="mt-6 pt-4 border-t border-gray-100 space-y-3">
                  <button id="sd-whatsapp-btn" class="w-full bg-[#25D366] text-white font-bold rounded-lg py-3.5 flex items-center justify-center gap-2 hover:bg-[#1ebe57] shadow-sm transition">
                     <i class="fab fa-whatsapp text-lg"></i> Send Receipt via WhatsApp
@@ -163,85 +205,145 @@
                  <button id="sd-pdf-btn" class="w-full bg-gray-900 text-white font-bold rounded-lg py-3.5 flex items-center justify-center gap-2 hover:bg-black shadow-sm transition">
                     <i class="fas fa-file-pdf text-lg"></i> Download PDF Invoice
                 </button>
-                 <!-- Added dynamically if pending -->
                  <div id="sd-mark-paid-container"></div>
             </div>
         </div>
     </div>
 
-    <!-- HIDDEN PDF INVOICE TEMPLATE -->
+    <!-- HIDDEN PREMIUM PDF INVOICE TEMPLATE -->
     <div id="invoice-template-container">
-        <div id="invoice-template" class="bg-white p-10 text-gray-800" style="width: 800px; min-height: 1100px; font-family: Arial, sans-serif;">
-            <div class="flex justify-between items-start border-b-2 border-gray-200 pb-8 mb-8">
-                <div class="flex items-center gap-4">
-                    <img id="inv-logo" src="" alt="Logo" class="w-20 h-20 object-cover rounded-lg hidden">
+        <div id="invoice-template" class="bg-white relative" style="width: 850px; min-height: 1122px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+            
+            <!-- Dynamic Watermark -->
+            <img id="inv-watermark" src="" class="watermark hidden" alt="watermark">
+
+            <!-- Premium Header -->
+            <div class="bg-slate-900 text-white px-10 py-12 flex justify-between items-center rounded-b-3xl">
+                <div class="flex items-center gap-5 z-10">
+                    <img id="inv-logo" src="" alt="Logo" class="w-24 h-24 object-cover rounded-xl border-2 border-slate-700 shadow-lg hidden bg-white">
                     <div>
-                        <h1 id="inv-workshopName" class="text-3xl font-black text-gray-900 uppercase tracking-tight">Workshop Name</h1>
-                        <p id="inv-address" class="text-sm text-gray-500 mt-1 max-w-xs">Address Line</p>
-                        <p id="inv-phone" class="text-sm text-gray-500 font-semibold mt-1">Phone</p>
-                        <p id="inv-taxId" class="text-xs text-gray-400 mt-1 font-mono hidden">GSTIN: <span id="inv-tax-val"></span></p>
+                        <h1 id="inv-workshopName" class="text-4xl font-black tracking-tight text-white m-0 leading-tight">Workshop Name</h1>
+                        <p id="inv-adminName" class="text-slate-400 font-medium text-sm mt-1 uppercase tracking-widest">Admin Name</p>
+                        <div class="flex items-center gap-4 mt-3 text-xs text-slate-300">
+                            <span id="inv-phone" class="hidden"><i class="fas fa-phone mr-1 text-slate-500"></i><span id="inv-phone-val"></span></span>
+                            <span id="inv-email" class="hidden"><i class="fas fa-envelope mr-1 text-slate-500"></i><span id="inv-email-val"></span></span>
+                        </div>
                     </div>
                 </div>
-                <div class="text-right">
-                    <h2 class="text-4xl font-black text-gray-200 uppercase tracking-widest">INVOICE</h2>
-                    <p class="text-sm text-gray-500 mt-2 font-semibold">Date: <span id="inv-date" class="text-gray-900"></span></p>
-                    <p class="text-sm text-gray-500">Invoice No: <span id="inv-id" class="text-gray-900 font-mono"></span></p>
-                    <p class="text-sm text-gray-500 mt-1 font-bold">Status: <span id="inv-status" class="uppercase"></span></p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-10 mb-8">
-                <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
-                    <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-3">Billed To Customer</p>
-                    <h3 id="inv-customerName" class="text-xl font-bold text-gray-900">Name</h3>
-                    <p id="inv-customerPhone" class="text-sm text-gray-600 mt-1">Phone</p>
-                </div>
-                <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
-                    <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-3">Vehicle Details</p>
-                    <h3 id="inv-bikeModel" class="text-xl font-bold text-gray-900">Bike Model</h3>
-                    <div class="flex items-center gap-4 mt-2">
-                        <span id="inv-numberPlate" class="bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded font-bold uppercase font-mono">Plate</span>
-                        <span class="text-sm text-gray-600 font-semibold"><i class="fas fa-tachometer-alt mr-1 text-gray-400"></i> <span id="inv-currentKm"></span> KM</span>
+                <div class="text-right z-10">
+                    <h2 class="text-5xl font-black text-slate-800 uppercase tracking-widest opacity-80 mix-blend-overlay">INVOICE</h2>
+                    <div class="bg-slate-800 inline-block px-4 py-2 rounded-lg mt-3 border border-slate-700">
+                        <p class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-0.5">Invoice Number</p>
+                        <p class="text-lg text-white font-mono font-bold" id="inv-id">INV-000000</p>
                     </div>
                 </div>
             </div>
 
-            <table class="w-full mb-8 text-left border-collapse">
-                <thead>
-                    <tr class="bg-gray-900 text-white">
-                        <th class="py-3 px-4 rounded-tl-lg text-sm uppercase tracking-wider font-semibold w-3/4">Description of Work / Parts</th>
-                        <th class="py-3 px-4 rounded-tr-lg text-sm uppercase tracking-wider font-semibold text-right">Amount (₹)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="border-b border-gray-200">
-                        <td id="inv-workDone" class="py-6 px-4 text-gray-700 whitespace-pre-wrap leading-relaxed align-top">Work description</td>
-                        <td class="py-6 px-4 text-right align-top">
-                            <div class="text-sm text-gray-500 mb-1">Parts: ₹<span id="inv-parts"></span></div>
-                            <div class="text-sm text-gray-500 border-b border-gray-200 pb-2 mb-2">Labour: ₹<span id="inv-labour"></span></div>
-                            <div id="inv-cost" class="text-gray-900 font-bold text-xl">Cost</div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <div class="flex justify-between items-end">
-                <div class="w-1/2">
-                    <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl">
-                        <p class="text-xs text-blue-500 font-bold uppercase tracking-wider mb-1"><i class="fas fa-bell"></i> Next Service Reminder</p>
-                        <p class="text-sm text-blue-900 font-semibold">Vehicle is due for next service at <span id="inv-nextKm" class="font-black text-lg"></span> KM.</p>
+            <!-- Body Content -->
+            <div class="px-10 py-8 relative z-10">
+                
+                <!-- Quick Info Ribbon -->
+                <div class="flex justify-between items-center border-b-2 border-gray-100 pb-4 mb-8">
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Invoice Date</p>
+                        <p class="text-gray-900 font-bold" id="inv-date">Date</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Payment Status</p>
+                        <p class="font-bold uppercase tracking-wider" id="inv-status">Status</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Payment Method</p>
+                        <p class="text-gray-900 font-bold uppercase" id="inv-method">Method</p>
                     </div>
                 </div>
-                <div class="w-1/3 text-right">
-                    <p class="text-sm text-gray-500 font-bold uppercase mb-1">Grand Total</p>
-                    <h3 id="inv-total" class="text-5xl font-black text-gray-900 tracking-tighter">₹0</h3>
-                    <p class="text-xs text-gray-400 mt-2 font-bold uppercase">Paid via: <span id="inv-method"></span></p>
+
+                <!-- Entity Grid -->
+                <div class="grid grid-cols-2 gap-8 mb-10">
+                    <div class="p-6 rounded-2xl bg-gray-50 border border-gray-200">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center"><i class="fas fa-user"></i></div>
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Billed To</p>
+                        </div>
+                        <h3 id="inv-customerName" class="text-2xl font-black text-slate-900 mb-1">Customer Name</h3>
+                        <p class="text-slate-600 font-medium" id="inv-customerPhone">+91 XXXXX XXXXX</p>
+                    </div>
+                    
+                    <div class="p-6 rounded-2xl bg-gray-50 border border-gray-200">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center"><i class="fas fa-motorcycle"></i></div>
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Vehicle Details</p>
+                        </div>
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 id="inv-bikeModel" class="text-2xl font-black text-slate-900 mb-2">Bike Model</h3>
+                                <span id="inv-numberPlate" class="bg-slate-900 text-white text-sm px-3 py-1 rounded-md font-bold uppercase tracking-wider font-mono shadow-sm">Plate</span>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-slate-500 font-bold uppercase mb-1">Odometer</p>
+                                <p class="text-lg font-bold text-slate-800"><span id="inv-currentKm"></span> KM</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Work Details Table -->
+                <div class="rounded-2xl border border-gray-200 overflow-hidden mb-10">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700">
+                                <th class="py-4 px-6 text-xs uppercase tracking-widest font-bold w-2/3 border-b border-gray-200">Description of Service</th>
+                                <th class="py-4 px-6 text-xs uppercase tracking-widest font-bold text-right border-b border-gray-200 border-l">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-white">
+                                <td id="inv-workDone" class="py-6 px-6 text-slate-700 whitespace-pre-wrap leading-relaxed align-top border-r border-gray-100 text-sm font-medium">Work description</td>
+                                <td class="py-6 px-6 align-top bg-gray-50/50">
+                                    <div class="flex justify-between text-sm text-slate-600 mb-2 font-medium"><span>Spare Parts</span><span>₹<span id="inv-parts"></span></span></div>
+                                    <div class="flex justify-between text-sm text-slate-600 mb-4 pb-4 border-b border-gray-200 font-medium"><span>Labour Charges</span><span>₹<span id="inv-labour"></span></span></div>
+                                    <div class="flex justify-between items-end">
+                                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total</span>
+                                        <span id="inv-cost" class="text-slate-900 font-black text-2xl">Cost</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer Summary & Reminders -->
+                <div class="flex justify-between items-end mb-16">
+                    <div class="w-1/2">
+                        <div class="bg-emerald-50 border border-emerald-100 p-5 rounded-2xl relative overflow-hidden">
+                            <i class="fas fa-shield-alt absolute -right-4 -bottom-4 text-6xl text-emerald-500 opacity-10"></i>
+                            <p class="text-xs text-emerald-600 font-bold uppercase tracking-wider mb-2 flex items-center gap-2"><i class="fas fa-bell"></i> Maintenance Alert</p>
+                            <p class="text-sm text-emerald-900 font-medium">Next recommended service is due at <br><span id="inv-nextKm" class="font-black text-2xl tracking-tight mt-1 inline-block"></span> KM.</p>
+                        </div>
+                    </div>
+                    <div class="w-1/3 text-right">
+                        <p class="text-sm text-slate-500 font-bold uppercase tracking-widest mb-2">Grand Total</p>
+                        <h3 id="inv-total" class="text-6xl font-black text-slate-900 tracking-tighter">₹0</h3>
+                    </div>
+                </div>
+
             </div>
 
-            <div class="mt-20 pt-8 border-t-2 border-gray-200 text-center text-sm text-gray-500">
-                <p class="font-bold text-gray-800 mb-1">Thank you for trusting <span class="inv-workshopName-foot"></span>!</p>
-                <p>This is a system-generated invoice and does not require a physical signature.</p>
+            <!-- Absolute Footer -->
+            <div class="absolute bottom-0 w-full bg-slate-100 border-t border-slate-200 px-10 py-6 flex justify-between items-center">
+                <div class="text-xs text-slate-500 font-medium space-y-1">
+                    <p class="font-bold text-slate-800 text-sm">Thank you for your business!</p>
+                    <p id="inv-address-foot" class="max-w-xs leading-relaxed">Address</p>
+                    <p id="inv-taxId-foot" class="font-mono text-slate-400 hidden">GSTIN: <span id="inv-tax-val-foot"></span></p>
+                </div>
+                <div class="text-right text-xs text-slate-500 font-medium space-y-2">
+                    <p id="inv-website-foot" class="hidden"><i class="fas fa-globe text-slate-400 mr-2"></i><span id="inv-website-val"></span></p>
+                    <p id="inv-insta-foot" class="hidden"><i class="fab fa-instagram text-slate-400 mr-2"></i><span id="inv-insta-val"></span></p>
+                    <p id="inv-fb-foot" class="hidden"><i class="fab fa-facebook text-slate-400 mr-2"></i><span id="inv-fb-val"></span></p>
+                    <div class="mt-4 pt-4 border-t border-slate-300 inline-block px-4">
+                        <p class="uppercase tracking-widest font-bold text-[10px]">Authorized Signatory</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -258,7 +360,6 @@
                     <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Total Services</p>
                     <p class="text-2xl font-black text-gray-900" id="stat-total-services">0</p>
                 </div>
-                <!-- Clickable Total Revenue Box -->
                 <div onclick="switchView('revenue')" class="bg-white p-4 rounded-2xl shadow-sm border border-green-100 flex flex-col justify-center cursor-pointer hover:bg-green-50 transition relative group">
                     <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Total Revenue</p>
                     <p class="text-2xl font-black text-green-600" id="stat-revenue">₹0</p>
@@ -277,12 +378,9 @@
                 </div>
             </div>
 
-            <!-- PENDING PAYMENTS ALERT -->
             <div id="pending-payments-banner" onclick="switchView('pending')" class="cursor-pointer bg-yellow-50 border border-yellow-200 p-4 rounded-2xl shadow-sm mb-3 flex items-center justify-between hidden hover:bg-yellow-100 transition">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-yellow-200 text-yellow-700 rounded-full flex items-center justify-center shadow-inner">
-                        <i class="fas fa-hand-holding-dollar text-lg"></i>
-                    </div>
+                    <div class="w-10 h-10 bg-yellow-200 text-yellow-700 rounded-full flex items-center justify-center shadow-inner"><i class="fas fa-hand-holding-dollar text-lg"></i></div>
                     <div>
                         <p class="text-xs text-yellow-600 font-bold uppercase tracking-wider mb-0.5">Pending Payments</p>
                         <p class="text-sm font-black text-yellow-800"><span id="pending-count">0</span> Services Unpaid (₹<span id="pending-amount">0</span>)</p>
@@ -291,12 +389,9 @@
                 <i class="fas fa-chevron-right text-yellow-400"></i>
             </div>
 
-            <!-- DUE REMINDERS BANNER -->
             <div id="due-reminders-banner" onclick="switchView('reminders')" class="cursor-pointer bg-red-50 border border-red-100 p-4 rounded-2xl shadow-sm mb-6 flex items-center justify-between hidden hover:bg-red-100 transition">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-red-100 text-red-500 rounded-full flex items-center justify-center shadow-inner">
-                        <i class="fas fa-exclamation-circle text-lg"></i>
-                    </div>
+                    <div class="w-10 h-10 bg-red-100 text-red-500 rounded-full flex items-center justify-center shadow-inner"><i class="fas fa-exclamation-circle text-lg"></i></div>
                     <div>
                         <p class="text-xs text-red-400 font-bold uppercase tracking-wider mb-0.5">Action Needed</p>
                         <p class="text-sm font-black text-red-700"><span id="due-count">0</span> Customers Due For Service</p>
@@ -312,9 +407,7 @@
         <!-- 1.5 REVENUE INSIGHTS DETAILS -->
         <div id="view-revenue" class="view-section hidden">
             <div class="flex items-center gap-3 mb-6">
-                <button onclick="switchView('dashboard')" class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 hover:text-black transition">
-                    <i class="fas fa-arrow-left text-sm"></i>
-                </button>
+                <button onclick="switchView('dashboard')" class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 hover:text-black transition"><i class="fas fa-arrow-left text-sm"></i></button>
                 <h2 class="text-xl font-bold">Revenue Insights</h2>
             </div>
             <div id="revenue-insights-content" class="space-y-4"></div>
@@ -323,9 +416,7 @@
         <!-- 1.6 DUE REMINDERS VIEW -->
         <div id="view-reminders" class="view-section hidden">
             <div class="flex items-center gap-3 mb-6">
-                <button onclick="switchView('dashboard')" class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 hover:text-black transition">
-                    <i class="fas fa-arrow-left text-sm"></i>
-                </button>
+                <button onclick="switchView('dashboard')" class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 hover:text-black transition"><i class="fas fa-arrow-left text-sm"></i></button>
                 <div>
                     <h2 class="text-xl font-bold text-red-600">Overdue Services</h2>
                     <p class="text-xs text-gray-500">Customers inactive for > 90 days</p>
@@ -337,9 +428,7 @@
         <!-- 1.7 PENDING PAYMENTS VIEW -->
         <div id="view-pending" class="view-section hidden">
             <div class="flex items-center gap-3 mb-6">
-                <button onclick="switchView('dashboard')" class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 hover:text-black transition">
-                    <i class="fas fa-arrow-left text-sm"></i>
-                </button>
+                <button onclick="switchView('dashboard')" class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 hover:text-black transition"><i class="fas fa-arrow-left text-sm"></i></button>
                 <div>
                     <h2 class="text-xl font-bold text-yellow-600">Pending Payments</h2>
                     <p class="text-xs text-gray-500">Services marked as unpaid</p>
@@ -387,7 +476,6 @@
                     <textarea id="workDone" rows="2" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black"></textarea>
                 </div>
 
-                <!-- NEW FINANCIAL BLOCK -->
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-2">Billing Details</h3>
                     <div class="grid grid-cols-2 gap-4">
@@ -427,9 +515,10 @@
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-black text-white font-semibold rounded-lg py-3.5 shadow-md hover:bg-gray-800 transition">
-                    Save Service & Send Receipt
+                <button type="button" onclick="handleSaveAndSend()" id="saveSendBtn" class="w-full bg-black text-white font-semibold rounded-lg py-3.5 shadow-md hover:bg-gray-800 transition flex items-center justify-center gap-2">
+                    <i class="fas fa-paper-plane"></i> Save & Send PDF Invoice
                 </button>
+                <button type="submit" class="hidden" id="realSubmitBtn"></button>
             </form>
         </div>
 
@@ -441,87 +530,35 @@
             </div>
             
             <form id="editForm" class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-                <input type="hidden" id="edit-id">
-                <input type="hidden" id="edit-date">
-                <div class="space-y-2">
-                    <label class="text-sm font-semibold text-gray-600">Customer Name</label>
-                    <input type="text" id="edit-customerName" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
-                </div>
-                <div class="space-y-2">
-                    <label class="text-sm font-semibold text-gray-600">WhatsApp Number</label>
-                    <input type="number" id="edit-customerPhone" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
+                <input type="hidden" id="edit-id"><input type="hidden" id="edit-date">
+                <div class="space-y-2"><label class="text-sm font-semibold text-gray-600">Customer Name</label><input type="text" id="edit-customerName" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black"></div>
+                <div class="space-y-2"><label class="text-sm font-semibold text-gray-600">WhatsApp Number</label><input type="number" id="edit-customerPhone" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2"><label class="text-sm font-semibold text-gray-600">Bike Model</label><input type="text" id="edit-bikeModel" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black"></div>
+                    <div class="space-y-2"><label class="text-sm font-semibold text-gray-600">Number Plate</label><input type="text" id="edit-numberPlate" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black uppercase"></div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-2">
-                        <label class="text-sm font-semibold text-gray-600">Bike Model</label>
-                        <input type="text" id="edit-bikeModel" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-sm font-semibold text-gray-600">Number Plate</label>
-                        <input type="text" id="edit-numberPlate" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black uppercase">
-                    </div>
+                    <div class="space-y-2"><label class="text-sm font-semibold text-gray-600">Current KM</label><input type="number" id="edit-currentKm" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black"></div>
+                    <div class="space-y-2"><label class="text-sm font-semibold text-gray-600">Next Service (KM)</label><input type="number" id="edit-nextKm" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black"></div>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-2">
-                        <label class="text-sm font-semibold text-gray-600">Current KM</label>
-                        <input type="number" id="edit-currentKm" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-sm font-semibold text-gray-600">Next Service (KM)</label>
-                        <input type="number" id="edit-nextKm" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black">
-                    </div>
-                </div>
-                
-                <div class="space-y-2">
-                    <label class="text-sm font-semibold text-gray-600">Work Done</label>
-                    <textarea id="edit-workDone" rows="2" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black"></textarea>
-                </div>
-
+                <div class="space-y-2"><label class="text-sm font-semibold text-gray-600">Work Done</label><textarea id="edit-workDone" rows="2" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black"></textarea></div>
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-2">Billing Details</h3>
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1">
-                            <label class="text-xs font-semibold text-gray-600">Parts Cost (₹)</label>
-                            <input type="number" id="edit-costParts" oninput="calcTotal('edit-')" required class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black" placeholder="0">
-                        </div>
-                        <div class="space-y-1">
-                            <label class="text-xs font-semibold text-gray-600">Labour Cost (₹)</label>
-                            <input type="number" id="edit-costLabour" oninput="calcTotal('edit-')" required class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black" placeholder="0">
-                        </div>
+                        <div class="space-y-1"><label class="text-xs font-semibold text-gray-600">Parts Cost (₹)</label><input type="number" id="edit-costParts" oninput="calcTotal('edit-')" required class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black" placeholder="0"></div>
+                        <div class="space-y-1"><label class="text-xs font-semibold text-gray-600">Labour Cost (₹)</label><input type="number" id="edit-costLabour" oninput="calcTotal('edit-')" required class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black" placeholder="0"></div>
                     </div>
                     <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
                         <span class="text-sm font-bold text-gray-700">Total Amount</span>
-                        <div class="flex items-center">
-                            <span class="text-gray-500 font-bold mr-1">₹</span>
-                            <input type="number" id="edit-costTotal" readonly class="w-20 bg-transparent font-black text-xl text-right outline-none text-gray-900" value="0">
-                        </div>
+                        <div class="flex items-center"><span class="text-gray-500 font-bold mr-1">₹</span><input type="number" id="edit-costTotal" readonly class="w-20 bg-transparent font-black text-xl text-right outline-none text-gray-900" value="0"></div>
                     </div>
                     <div class="grid grid-cols-2 gap-4 pt-2">
-                        <div class="space-y-1">
-                            <label class="text-xs font-semibold text-gray-600">Payment Status</label>
-                            <select id="edit-paymentStatus" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black font-semibold">
-                                <option value="paid">✅ Paid</option>
-                                <option value="pending">⏳ Pending</option>
-                            </select>
-                        </div>
-                        <div class="space-y-1">
-                            <label class="text-xs font-semibold text-gray-600">Payment Method</label>
-                            <select id="edit-paymentMethod" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black font-semibold">
-                                <option value="cash">💵 Cash</option>
-                                <option value="upi">📱 UPI</option>
-                                <option value="card">💳 Card</option>
-                                <option value="other">⚙️ Other</option>
-                            </select>
-                        </div>
+                        <div class="space-y-1"><label class="text-xs font-semibold text-gray-600">Payment Status</label><select id="edit-paymentStatus" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black font-semibold"><option value="paid">✅ Paid</option><option value="pending">⏳ Pending</option></select></div>
+                        <div class="space-y-1"><label class="text-xs font-semibold text-gray-600">Payment Method</label><select id="edit-paymentMethod" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-black font-semibold"><option value="cash">💵 Cash</option><option value="upi">📱 UPI</option><option value="card">💳 Card</option><option value="other">⚙️ Other</option></select></div>
                     </div>
                 </div>
-
-                <button type="submit" class="w-full bg-black text-white font-semibold rounded-lg py-3.5 shadow-md hover:bg-gray-800 transition">
-                    Update Service
-                </button>
-                <button type="button" onclick="deleteEditingRecord()" class="w-full bg-red-50 text-red-600 font-semibold rounded-lg py-3 mt-2 hover:bg-red-100 transition">
-                    Delete Record
-                </button>
+                <button type="submit" class="w-full bg-black text-white font-semibold rounded-lg py-3.5 shadow-md hover:bg-gray-800 transition">Update Service</button>
+                <button type="button" onclick="deleteEditingRecord()" class="w-full bg-red-50 text-red-600 font-semibold rounded-lg py-3 mt-2 hover:bg-red-100 transition">Delete Record</button>
             </form>
         </div>
 
@@ -541,28 +578,19 @@
 
         <!-- 5. OWNER VIEW -->
         <div id="view-owner" class="view-section hidden">
-            
             <div class="bg-gradient-to-br from-gray-900 to-black rounded-3xl p-6 text-white mb-6 relative shadow-xl overflow-hidden">
                 <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
-                
                 <div class="flex items-center gap-5 relative z-10">
                     <div class="relative group cursor-pointer" onclick="document.getElementById('logoUpload').click()">
-                        <div id="owner-logo-placeholder" class="w-20 h-20 rounded-2xl bg-gray-800 border-2 border-gray-700 shadow-lg flex items-center justify-center text-gray-400 text-3xl">
-                            <i class="fas fa-store"></i>
-                        </div>
+                        <div id="owner-logo-placeholder" class="w-20 h-20 rounded-2xl bg-gray-800 border-2 border-gray-700 shadow-lg flex items-center justify-center text-gray-400 text-3xl"><i class="fas fa-store"></i></div>
                         <img id="owner-logo-preview" src="" alt="Workshop Logo" class="w-20 h-20 rounded-2xl object-cover bg-gray-800 border-2 border-gray-700 shadow-lg hidden">
-                        <div class="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300">
-                            <i class="fas fa-camera text-white"></i>
-                        </div>
+                        <div class="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300"><i class="fas fa-camera text-white"></i></div>
                     </div>
-                    <input type="file" id="logoUpload" accept="image/*" onchange="handleLogoUpload(event)" class="hidden">
-                    
+                    <input type="file" id="logoUpload" accept="image/*" onchange="handleLogoUpload(event, false)" class="hidden">
                     <div class="flex-1">
                         <h2 class="text-2xl font-black tracking-tight leading-none mb-1" id="profile-display-name">Loading...</h2>
                         <p class="text-gray-400 text-sm font-medium" id="profile-display-admin">Administrator</p>
-                        <span class="inline-block mt-2 bg-[#25D366]/20 text-[#25D366] text-[10px] font-bold px-2 py-1 rounded-md border border-[#25D366]/20">
-                            <i class="fas fa-check-circle mr-1"></i> Verified Workshop
-                        </span>
+                        <span class="inline-block mt-2 bg-[#25D366]/20 text-[#25D366] text-[10px] font-bold px-2 py-1 rounded-md border border-[#25D366]/20"><i class="fas fa-check-circle mr-1"></i> Verified Workshop</span>
                     </div>
                 </div>
             </div>
@@ -571,70 +599,57 @@
                 <div>
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-1">Business Identity</h3>
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Workshop Name</label>
-                            <input type="text" id="set-workshopName" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm font-semibold text-gray-900 transition">
+                        <div class="space-y-1.5"><label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Workshop Name</label><input type="text" id="set-workshopName" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm font-semibold text-gray-900 transition"></div>
+                        <div class="space-y-1.5"><label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Owner/Admin Name</label><input type="text" id="set-adminName" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm font-semibold text-gray-900 transition"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-1">Contact & Documents</h3>
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1.5"><label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Phone No.</label><input type="number" id="set-phone" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm text-gray-900 transition"></div>
+                            <div class="space-y-1.5"><label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">GST / Trade Lic.</label><input type="text" id="set-taxId" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm text-gray-900 uppercase transition"></div>
                         </div>
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Owner/Admin Name</label>
-                            <input type="text" id="set-adminName" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm font-semibold text-gray-900 transition">
+                        <div class="space-y-1.5"><label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Email Address</label><input type="email" id="set-email" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm text-gray-900 transition"></div>
+                        <div class="space-y-1.5 relative">
+                            <div class="flex justify-between items-end">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Workshop Address</label>
+                                <button type="button" onclick="autoDetectLocation('set-address', this)" class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold hover:bg-blue-100 flex items-center gap-1"><i class="fas fa-location-arrow"></i> Detect</button>
+                            </div>
+                            <textarea id="set-address" rows="2" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm text-gray-900 transition"></textarea>
                         </div>
                     </div>
                 </div>
 
                 <div>
-                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-1">Documents & Contact</h3>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-1">Digital Links</h3>
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
+                        <div class="space-y-1.5"><label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide"><i class="fas fa-globe"></i> Website</label><input type="url" id="set-website" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm text-gray-900 transition"></div>
                         <div class="grid grid-cols-2 gap-4">
-                            <div class="space-y-1.5">
-                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Contact No.</label>
-                                <input type="number" id="set-phone" placeholder="Business Phone" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm text-gray-900 transition">
-                            </div>
-                            <div class="space-y-1.5">
-                                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">GST / Trade Lic.</label>
-                                <input type="text" id="set-taxId" placeholder="GSTIN / License" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm text-gray-900 uppercase transition">
-                            </div>
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Email Address</label>
-                            <input type="email" id="set-email" placeholder="workshop@example.com" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm text-gray-900 transition">
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Workshop Address</label>
-                            <textarea id="set-address" rows="2" placeholder="Full Business Address" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm text-gray-900 transition"></textarea>
+                            <div class="space-y-1.5"><label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide"><i class="fab fa-instagram"></i> Instagram</label><input type="text" id="set-insta" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm text-gray-900 transition"></div>
+                            <div class="space-y-1.5"><label class="text-[10px] font-bold text-gray-500 uppercase tracking-wide"><i class="fab fa-facebook"></i> Facebook</label><input type="text" id="set-fb" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-black text-sm text-gray-900 transition"></div>
                         </div>
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-black text-white font-bold rounded-xl py-3.5 shadow-md shadow-gray-400/30 hover:bg-gray-800 transition">
-                    Save Profile Details
-                </button>
+                <button type="submit" class="w-full bg-black text-white font-bold rounded-xl py-3.5 shadow-md hover:bg-gray-800 transition">Save Profile Details</button>
             </form>
 
             <hr class="my-8 border-gray-200">
-
             <div>
                 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-1">System & Data</h3>
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
-                    <button onclick="exportData()" class="w-full bg-gray-50 text-gray-800 font-semibold rounded-xl py-3.5 flex items-center justify-center gap-2 hover:bg-gray-100 border border-gray-200 transition">
-                        <i class="fas fa-file-export text-blue-500"></i> Backup (Export Data)
-                    </button>
-                    <div class="relative">
-                        <input type="file" id="importFile" accept=".json" onchange="importData(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                        <button class="w-full bg-gray-50 text-gray-800 font-semibold rounded-xl py-3.5 flex items-center justify-center gap-2 hover:bg-gray-100 border border-gray-200 transition pointer-events-none">
-                            <i class="fas fa-file-import text-green-500"></i> Restore (Import Data)
-                        </button>
-                    </div>
+                    <button onclick="exportData()" class="w-full bg-gray-50 text-gray-800 font-semibold rounded-xl py-3.5 flex items-center justify-center gap-2 hover:bg-gray-100 border border-gray-200 transition"><i class="fas fa-file-export text-blue-500"></i> Backup (Export Data)</button>
+                    <div class="relative"><input type="file" id="importFile" accept=".json" onchange="importData(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"><button class="w-full bg-gray-50 text-gray-800 font-semibold rounded-xl py-3.5 flex items-center justify-center gap-2 hover:bg-gray-100 border border-gray-200 transition pointer-events-none"><i class="fas fa-file-import text-green-500"></i> Restore (Import Data)</button></div>
                 </div>
             </div>
 
             <div class="mt-8 mb-4">
                 <h3 class="text-xs font-bold text-red-400 uppercase tracking-widest mb-3 pl-1">Danger Zone</h3>
                 <div class="bg-red-50 rounded-2xl shadow-sm border border-red-100 p-4">
-                    <p class="text-[11px] text-red-600 mb-3 font-semibold leading-relaxed">Warning: This will permanently delete all services, customers, and settings from this device.</p>
-                    <button onclick="clearData()" class="w-full bg-white text-red-600 font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 hover:bg-red-600 hover:text-white transition border border-red-200">
-                        <i class="fas fa-trash-alt"></i> Delete All App Data
-                    </button>
+                    <p class="text-[11px] text-red-600 mb-3 font-semibold leading-relaxed">Warning: This will permanently delete all services, customers, and settings.</p>
+                    <button onclick="clearData()" class="w-full bg-white text-red-600 font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 hover:bg-red-600 hover:text-white transition border border-red-200"><i class="fas fa-trash-alt"></i> Delete All App Data</button>
                 </div>
             </div>
         </div>
@@ -643,26 +658,11 @@
 
     <!-- BOTTOM NAVIGATION -->
     <nav class="fixed bottom-0 w-full bg-white border-t border-gray-200 flex py-2 px-1 pb-safe z-10 text-gray-400">
-        <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn flex-1 flex flex-col items-center py-1 text-black">
-            <i class="fas fa-home text-lg mb-1"></i>
-            <span class="text-[9px] font-semibold">Home</span>
-        </button>
-        <button onclick="switchView('add')" id="nav-add" class="nav-btn flex-1 flex flex-col items-center py-1">
-            <i class="fas fa-plus-circle text-lg mb-1"></i>
-            <span class="text-[9px] font-semibold">Add</span>
-        </button>
-        <button onclick="switchView('history')" id="nav-history" class="nav-btn flex-1 flex flex-col items-center py-1">
-            <i class="fas fa-history text-lg mb-1"></i>
-            <span class="text-[9px] font-semibold">History</span>
-        </button>
-        <button onclick="switchView('customers')" id="nav-customers" class="nav-btn flex-1 flex flex-col items-center py-1">
-            <i class="fas fa-users text-lg mb-1"></i>
-            <span class="text-[9px] font-semibold">Clients</span>
-        </button>
-        <button onclick="switchView('owner')" id="nav-owner" class="nav-btn flex-1 flex flex-col items-center py-1">
-            <i class="fas fa-store text-lg mb-1"></i>
-            <span class="text-[9px] font-semibold">Owner</span>
-        </button>
+        <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn flex-1 flex flex-col items-center py-1 text-black"><i class="fas fa-home text-lg mb-1"></i><span class="text-[9px] font-semibold">Home</span></button>
+        <button onclick="switchView('add')" id="nav-add" class="nav-btn flex-1 flex flex-col items-center py-1"><i class="fas fa-plus-circle text-lg mb-1"></i><span class="text-[9px] font-semibold">Add</span></button>
+        <button onclick="switchView('history')" id="nav-history" class="nav-btn flex-1 flex flex-col items-center py-1"><i class="fas fa-history text-lg mb-1"></i><span class="text-[9px] font-semibold">History</span></button>
+        <button onclick="switchView('customers')" id="nav-customers" class="nav-btn flex-1 flex flex-col items-center py-1"><i class="fas fa-users text-lg mb-1"></i><span class="text-[9px] font-semibold">Clients</span></button>
+        <button onclick="switchView('owner')" id="nav-owner" class="nav-btn flex-1 flex flex-col items-center py-1"><i class="fas fa-store text-lg mb-1"></i><span class="text-[9px] font-semibold">Owner</span></button>
     </nav>
 
     <!-- JAVASCRIPT -->
@@ -673,13 +673,16 @@
         const manifestBlob = new Blob([JSON.stringify(manifestContent)], { type: 'application/json' });
         document.getElementById('pwa-manifest').href = URL.createObjectURL(manifestBlob);
         
-        // --- Data Initialization & Legacy Support Handlers ---
+        // --- Data Init ---
         let services = JSON.parse(localStorage.getItem('tmr_services')) || [];
         let ownerData = JSON.parse(localStorage.getItem('tmr_owner'));
         let isSetup = localStorage.getItem('tmr_isSetup') === 'true';
 
-        if (!ownerData) ownerData = { workshopName: "Bhat Network", adminName: "Administrator" };
-        ownerData.logo = ownerData.logo || ""; ownerData.phone = ownerData.phone || ""; ownerData.email = ownerData.email || ""; ownerData.address = ownerData.address || ""; ownerData.taxId = ownerData.taxId || "";
+        if (!ownerData) ownerData = {};
+        ownerData.workshopName = ownerData.workshopName || "Bhat Network"; ownerData.adminName = ownerData.adminName || "Administrator";
+        ownerData.logo = ownerData.logo || ""; ownerData.phone = ownerData.phone || ""; ownerData.email = ownerData.email || ""; 
+        ownerData.address = ownerData.address || ""; ownerData.taxId = ownerData.taxId || "";
+        ownerData.website = ownerData.website || ""; ownerData.insta = ownerData.insta || ""; ownerData.fb = ownerData.fb || "";
 
         function getCostParts(r) { return Number(r.cost_parts) || 0; }
         function getCostLabour(r) { return Number(r.cost_labour) || Number(r.cost) || 0; }
@@ -689,30 +692,55 @@
         function getProfit(r) { return r.profit !== undefined ? Number(r.profit) : getCostLabour(r); }
 
         function initApp() {
+            // UI Population
             document.getElementById('header-workshop-name').innerText = ownerData.workshopName;
             document.getElementById('splash-workshop-name').innerText = ownerData.workshopName;
             document.getElementById('profile-display-name').innerText = ownerData.workshopName;
             document.getElementById('profile-display-admin').innerText = ownerData.adminName;
             
+            // Setup Form Population (in case they reopen it somehow, or re-init)
+            document.getElementById('setup-workshopName').value = ownerData.workshopName; document.getElementById('setup-adminName').value = ownerData.adminName;
+            document.getElementById('setup-phone').value = ownerData.phone; document.getElementById('setup-email').value = ownerData.email;
+            document.getElementById('setup-address').value = ownerData.address; document.getElementById('setup-website').value = ownerData.website;
+            document.getElementById('setup-insta').value = ownerData.insta; document.getElementById('setup-fb').value = ownerData.fb;
+
+            // Settings Form Population
             document.getElementById('set-workshopName').value = ownerData.workshopName; document.getElementById('set-adminName').value = ownerData.adminName;
             document.getElementById('set-phone').value = ownerData.phone; document.getElementById('set-taxId').value = ownerData.taxId;
             document.getElementById('set-email').value = ownerData.email; document.getElementById('set-address').value = ownerData.address;
+            document.getElementById('set-website').value = ownerData.website; document.getElementById('set-insta').value = ownerData.insta; document.getElementById('set-fb').value = ownerData.fb;
 
+            // Premium PDF Population
             document.getElementById('inv-workshopName').innerText = ownerData.workshopName;
-            document.getElementById('inv-address').innerText = ownerData.address || "Address not provided";
-            document.getElementById('inv-phone').innerText = ownerData.phone ? `Ph: ${ownerData.phone}` : "";
-            if(ownerData.taxId) { document.getElementById('inv-taxId').classList.remove('hidden'); document.getElementById('inv-tax-val').innerText = ownerData.taxId; }
-            document.querySelectorAll('.inv-workshopName-foot').forEach(el => el.innerText = ownerData.workshopName);
+            document.getElementById('inv-adminName').innerText = ownerData.adminName;
+            document.getElementById('inv-address-foot').innerText = ownerData.address || "Address not provided";
+            
+            if(ownerData.phone) { document.getElementById('inv-phone').classList.remove('hidden'); document.getElementById('inv-phone-val').innerText = ownerData.phone; }
+            if(ownerData.email) { document.getElementById('inv-email').classList.remove('hidden'); document.getElementById('inv-email-val').innerText = ownerData.email; }
+            if(ownerData.taxId) { document.getElementById('inv-taxId-foot').classList.remove('hidden'); document.getElementById('inv-tax-val-foot').innerText = ownerData.taxId; }
+            
+            if(ownerData.website) { document.getElementById('inv-website-foot').classList.remove('hidden'); document.getElementById('inv-website-val').innerText = ownerData.website.replace(/^https?:\/\//, ''); }
+            if(ownerData.insta) { document.getElementById('inv-insta-foot').classList.remove('hidden'); document.getElementById('inv-insta-val').innerText = ownerData.insta; }
+            if(ownerData.fb) { document.getElementById('inv-fb-foot').classList.remove('hidden'); document.getElementById('inv-fb-val').innerText = ownerData.fb; }
 
+            // Logo Handling
             if (ownerData.logo) {
                 document.getElementById('header-logo').src = ownerData.logo; document.getElementById('header-logo').classList.remove('hidden');
                 document.getElementById('splash-icon-container').innerHTML = `<img src="${ownerData.logo}" class="w-16 h-16 rounded-2xl object-cover">`;
+                
                 document.getElementById('owner-logo-preview').src = ownerData.logo; document.getElementById('owner-logo-preview').classList.remove('hidden');
                 document.getElementById('owner-logo-placeholder').classList.add('hidden');
+                
+                document.getElementById('setup-logo-preview').src = ownerData.logo; document.getElementById('setup-logo-preview').classList.remove('hidden');
+                document.getElementById('setup-logo-placeholder').classList.add('hidden');
+
                 document.getElementById('inv-logo').src = ownerData.logo; document.getElementById('inv-logo').classList.remove('hidden');
+                document.getElementById('inv-watermark').src = ownerData.logo; document.getElementById('inv-watermark').classList.remove('hidden');
             } else {
-                document.getElementById('header-logo').classList.add('hidden'); document.getElementById('owner-logo-preview').classList.add('hidden');
-                document.getElementById('owner-logo-placeholder').classList.remove('hidden'); document.getElementById('inv-logo').classList.add('hidden');
+                document.getElementById('header-logo').classList.add('hidden');
+                document.getElementById('owner-logo-preview').classList.add('hidden'); document.getElementById('owner-logo-placeholder').classList.remove('hidden');
+                document.getElementById('setup-logo-preview').classList.add('hidden'); document.getElementById('setup-logo-placeholder').classList.remove('hidden');
+                document.getElementById('inv-logo').classList.add('hidden'); document.getElementById('inv-watermark').classList.add('hidden');
             }
             updateNotificationBadge();
         }
@@ -725,30 +753,57 @@
             }, 1200);
         });
 
-        function handleLogoUpload(event) {
+        function handleLogoUpload(event, isSetupMode = true) {
             const file = event.target.files[0]; if(!file) return; const reader = new FileReader();
             reader.onload = function(e) {
                 if(e.target.result.length > 2000000) { alert("Image is too large! Please choose a smaller logo under 1.5MB."); return; }
-                ownerData.logo = e.target.result; localStorage.setItem('tmr_owner', JSON.stringify(ownerData)); initApp();
+                ownerData.logo = e.target.result;
+                if(!isSetupMode) { localStorage.setItem('tmr_owner', JSON.stringify(ownerData)); initApp(); }
+                else { 
+                    document.getElementById('setup-logo-preview').src = e.target.result; document.getElementById('setup-logo-preview').classList.remove('hidden');
+                    document.getElementById('setup-logo-placeholder').classList.add('hidden');
+                }
             }
             reader.readAsDataURL(file);
+        }
+        document.getElementById('setup-logoUpload').addEventListener('change', (e) => handleLogoUpload(e, true));
+
+        // Auto Detect Location using Geolocation & Nominatim API
+        function autoDetectLocation(inputId, btnElement) {
+            const originalHTML = btnElement.innerHTML;
+            btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    try {
+                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
+                        const data = await res.json();
+                        document.getElementById(inputId).value = data.display_name;
+                    } catch (e) { alert("Failed to fetch address automatically. Please type it."); }
+                    btnElement.innerHTML = originalHTML;
+                }, () => {
+                    alert("Location access denied or failed.");
+                    btnElement.innerHTML = originalHTML;
+                });
+            } else { alert("Geolocation not supported by this device."); btnElement.innerHTML = originalHTML; }
         }
 
         document.getElementById('setupForm').addEventListener('submit', function(e) {
             e.preventDefault();
             ownerData.workshopName = document.getElementById('setup-workshopName').value; ownerData.adminName = document.getElementById('setup-adminName').value;
+            ownerData.phone = document.getElementById('setup-phone').value; ownerData.email = document.getElementById('setup-email').value;
+            ownerData.address = document.getElementById('setup-address').value; ownerData.website = document.getElementById('setup-website').value;
+            ownerData.insta = document.getElementById('setup-insta').value; ownerData.fb = document.getElementById('setup-fb').value;
+            
             localStorage.setItem('tmr_owner', JSON.stringify(ownerData)); localStorage.setItem('tmr_isSetup', 'true'); isSetup = true;
             initApp(); document.getElementById('setup-screen').classList.add('hidden');
         });
 
-        // --- Core Functions ---
         function calcTotal(prefix) {
             const parts = Number(document.getElementById(prefix + 'costParts').value) || 0;
             const labour = Number(document.getElementById(prefix + 'costLabour').value) || 0;
             document.getElementById(prefix + 'costTotal').value = parts + labour;
         }
 
-        // --- NEW: Notifications Logic ---
         function updateNotificationBadge() {
             let pendingCount = services.filter(s => getPaymentStatus(s) === 'pending').length;
             const uniqueMap = new Map(); services.forEach(r => { if(!uniqueMap.has(r.numberPlate)) uniqueMap.set(r.numberPlate, r); });
@@ -757,7 +812,6 @@
                 const rDate = parseDateIndia(record.date);
                 if((now - rDate) / (1000 * 60 * 60 * 24) > 90) dueCount++;
             });
-
             const badge = document.getElementById('notif-badge');
             if(pendingCount > 0 || dueCount > 0) { badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); }
         }
@@ -766,38 +820,15 @@
             let pendingCount = services.filter(s => getPaymentStatus(s) === 'pending').length;
             const uniqueMap = new Map(); services.forEach(r => { if(!uniqueMap.has(r.numberPlate)) uniqueMap.set(r.numberPlate, r); });
             const now = new Date(); let dueCount = 0;
-            uniqueMap.forEach(record => {
-                const rDate = parseDateIndia(record.date);
-                if((now - rDate) / (1000 * 60 * 60 * 24) > 90) dueCount++;
-            });
-
+            uniqueMap.forEach(record => { const rDate = parseDateIndia(record.date); if((now - rDate) / (1000 * 60 * 60 * 24) > 90) dueCount++; });
             const list = document.getElementById('notif-list'); list.innerHTML = '';
 
             if(pendingCount === 0 && dueCount === 0) {
-                list.innerHTML = `
-                    <div class="text-center py-6">
-                        <div class="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl"><i class="fas fa-check"></i></div>
-                        <p class="text-gray-500 font-medium">You're all caught up!</p>
-                    </div>`;
+                list.innerHTML = `<div class="text-center py-6"><div class="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl"><i class="fas fa-check"></i></div><p class="text-gray-500 font-medium">You're all caught up!</p></div>`;
             } else {
-                if(pendingCount > 0) {
-                    list.innerHTML += `
-                        <div onclick="closeNotifications(); switchView('pending')" class="cursor-pointer bg-yellow-50 p-4 rounded-2xl border border-yellow-100 flex items-center gap-4 hover:bg-yellow-100 transition">
-                            <div class="w-10 h-10 bg-yellow-200 text-yellow-700 rounded-full flex items-center justify-center shrink-0"><i class="fas fa-hand-holding-dollar"></i></div>
-                            <div class="flex-1"><p class="text-sm font-bold text-gray-900">Pending Payments</p><p class="text-xs text-yellow-700">${pendingCount} services waiting for payment</p></div>
-                            <i class="fas fa-chevron-right text-yellow-400 text-sm"></i>
-                        </div>`;
-                }
-                if(dueCount > 0) {
-                    list.innerHTML += `
-                        <div onclick="closeNotifications(); switchView('reminders')" class="cursor-pointer bg-red-50 p-4 rounded-2xl border border-red-100 flex items-center gap-4 hover:bg-red-100 transition">
-                            <div class="w-10 h-10 bg-red-200 text-red-700 rounded-full flex items-center justify-center shrink-0"><i class="fas fa-motorcycle"></i></div>
-                            <div class="flex-1"><p class="text-sm font-bold text-gray-900">Service Reminders</p><p class="text-xs text-red-700">${dueCount} vehicles overdue for service</p></div>
-                            <i class="fas fa-chevron-right text-red-400 text-sm"></i>
-                        </div>`;
-                }
+                if(pendingCount > 0) { list.innerHTML += `<div onclick="closeNotifications(); switchView('pending')" class="cursor-pointer bg-yellow-50 p-4 rounded-2xl border border-yellow-100 flex items-center gap-4 hover:bg-yellow-100 transition"><div class="w-10 h-10 bg-yellow-200 text-yellow-700 rounded-full flex items-center justify-center shrink-0"><i class="fas fa-hand-holding-dollar"></i></div><div class="flex-1"><p class="text-sm font-bold text-gray-900">Pending Payments</p><p class="text-xs text-yellow-700">${pendingCount} services waiting for payment</p></div><i class="fas fa-chevron-right text-yellow-400 text-sm"></i></div>`; }
+                if(dueCount > 0) { list.innerHTML += `<div onclick="closeNotifications(); switchView('reminders')" class="cursor-pointer bg-red-50 p-4 rounded-2xl border border-red-100 flex items-center gap-4 hover:bg-red-100 transition"><div class="w-10 h-10 bg-red-200 text-red-700 rounded-full flex items-center justify-center shrink-0"><i class="fas fa-motorcycle"></i></div><div class="flex-1"><p class="text-sm font-bold text-gray-900">Service Reminders</p><p class="text-xs text-red-700">${dueCount} vehicles overdue for service</p></div><i class="fas fa-chevron-right text-red-400 text-sm"></i></div>`; }
             }
-
             const overlay = document.getElementById('notif-overlay'); const content = document.getElementById('notif-content');
             overlay.classList.remove('hidden'); void overlay.offsetWidth; overlay.classList.remove('opacity-0'); content.classList.remove('scale-95');
         }
@@ -819,8 +850,7 @@
         function markAsPaid(id) {
             const index = services.findIndex(r => r.id === id);
             if(index !== -1) {
-                services[index].payment_status = 'paid';
-                saveData(); closeServiceDetails();
+                services[index].payment_status = 'paid'; saveData(); closeServiceDetails();
                 const currentView = Array.from(document.querySelectorAll('.view-section')).find(v => !v.classList.contains('hidden')).id;
                 switchView(currentView.replace('view-', ''));
             }
@@ -828,90 +858,110 @@
 
         function openServiceDetails(id) {
             const record = services.find(r => r.id === id); if(!record) return;
-            const pStatus = getPaymentStatus(record);
-            const pMethod = getPaymentMethod(record);
-            
-            document.getElementById('sd-payment-badge').innerHTML = pStatus === 'paid' 
-                ? `<span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded border border-green-200">✅ Paid (${pMethod.toUpperCase()})</span>`
-                : `<span class="bg-yellow-100 text-yellow-700 text-xs font-bold px-2 py-1 rounded border border-yellow-200">⏳ Pending</span>`;
+            const pStatus = getPaymentStatus(record); const pMethod = getPaymentMethod(record);
+            document.getElementById('sd-payment-badge').innerHTML = pStatus === 'paid' ? `<span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded border border-green-200">✅ Paid (${pMethod.toUpperCase()})</span>` : `<span class="bg-yellow-100 text-yellow-700 text-xs font-bold px-2 py-1 rounded border border-yellow-200">⏳ Pending</span>`;
 
             document.getElementById('sd-content').innerHTML = `
                 <div class="flex justify-between items-center border-b border-gray-100 pb-3">
-                    <div>
-                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Customer</p>
-                        <p class="font-bold text-sm text-gray-800">${record.customerName}</p>
-                        <p class="text-xs text-gray-500">${record.customerPhone}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Vehicle</p>
-                        <p class="font-bold text-sm text-gray-800">${record.numberPlate}</p>
-                        <p class="text-xs text-gray-500">${record.bikeModel}</p>
-                    </div>
+                    <div><p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Customer</p><p class="font-bold text-sm text-gray-800">${record.customerName}</p><p class="text-xs text-gray-500">${record.customerPhone}</p></div>
+                    <div class="text-right"><p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Vehicle</p><p class="font-bold text-sm text-gray-800">${record.numberPlate}</p><p class="text-xs text-gray-500">${record.bikeModel}</p></div>
                 </div>
-                <div class="pt-2">
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-2">Work Done</p>
-                    <p class="bg-gray-50 p-3 rounded-xl text-sm text-gray-700 leading-relaxed border border-gray-100 shadow-inner">${record.workDone}</p>
-                </div>
+                <div class="pt-2"><p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-2">Work Done</p><p class="bg-gray-50 p-3 rounded-xl text-sm text-gray-700 leading-relaxed border border-gray-100 shadow-inner">${record.workDone}</p></div>
                 <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
                     <div class="flex justify-between text-sm text-gray-600 mb-2"><span>Parts Cost</span><span>₹${getCostParts(record)}</span></div>
                     <div class="flex justify-between text-sm text-gray-600 mb-2 pb-2 border-b border-gray-200"><span>Labour Cost</span><span>₹${getCostLabour(record)}</span></div>
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-gray-900">Total Billed</span>
-                        <span class="font-black text-xl text-gray-900">₹${getCostTotal(record)}</span>
-                    </div>
+                    <div class="flex justify-between items-center"><span class="font-bold text-gray-900">Total Billed</span><span class="font-black text-xl text-gray-900">₹${getCostTotal(record)}</span></div>
                 </div>
-                <div class="flex justify-between text-xs text-gray-500 font-semibold px-1">
-                    <p>Date: ${record.date}</p>
-                    <p class="text-red-500">Next Service: ${record.nextKm} KM</p>
-                </div>
+                <div class="flex justify-between text-xs text-gray-500 font-semibold px-1"><p>Date: ${record.date}</p><p class="text-red-500">Next Service: ${record.nextKm} KM</p></div>
             `;
             
             document.getElementById('sd-whatsapp-btn').onclick = () => sendWhatsApp(record);
-            document.getElementById('sd-pdf-btn').onclick = () => downloadPDF(record);
+            document.getElementById('sd-pdf-btn').onclick = () => downloadPDF(record, false);
 
             const mpContainer = document.getElementById('sd-mark-paid-container');
-            if(pStatus === 'pending') {
-                mpContainer.innerHTML = `
-                    <button onclick="markAsPaid(${record.id})" class="w-full bg-yellow-50 text-yellow-600 border border-yellow-200 font-bold rounded-lg py-3.5 flex items-center justify-center gap-2 hover:bg-yellow-100 transition mt-2">
-                        <i class="fas fa-check-circle"></i> Mark as Paid Now
-                    </button>
-                `;
-            } else { mpContainer.innerHTML = ''; }
+            if(pStatus === 'pending') { mpContainer.innerHTML = `<button onclick="markAsPaid(${record.id})" class="w-full bg-yellow-50 text-yellow-600 border border-yellow-200 font-bold rounded-lg py-3.5 flex items-center justify-center gap-2 hover:bg-yellow-100 transition mt-2"><i class="fas fa-check-circle"></i> Mark as Paid Now</button>`; } else { mpContainer.innerHTML = ''; }
 
             const overlay = document.getElementById('service-details-overlay'); const content = document.getElementById('service-details-content');
-            overlay.classList.remove('hidden'); void overlay.offsetWidth;
-            overlay.classList.remove('opacity-0'); content.classList.remove('translate-y-full', 'scale-95');
+            overlay.classList.remove('hidden'); void overlay.offsetWidth; overlay.classList.remove('opacity-0'); content.classList.remove('translate-y-full', 'scale-95');
         }
 
         function closeServiceDetails() {
             const overlay = document.getElementById('service-details-overlay'); const content = document.getElementById('service-details-content');
-            overlay.classList.add('opacity-0'); content.classList.add('translate-y-full', 'scale-95');
-            setTimeout(() => overlay.classList.add('hidden'), 300);
+            overlay.classList.add('opacity-0'); content.classList.add('translate-y-full', 'scale-95'); setTimeout(() => overlay.classList.add('hidden'), 300);
         }
 
-        function downloadPDF(record) {
+        // PREMIUM PDF DOWNLOAD LOGIC
+        function downloadPDF(record, autoWhatsApp = false) {
             document.getElementById('inv-date').innerText = record.date;
             document.getElementById('inv-id').innerText = `INV-${record.id.toString().slice(-6)}`;
-            document.getElementById('inv-status').innerText = getPaymentStatus(record);
-            document.getElementById('inv-customerName').innerText = record.customerName;
-            document.getElementById('inv-customerPhone').innerText = `Ph: ${record.customerPhone}`;
-            document.getElementById('inv-bikeModel').innerText = record.bikeModel;
-            document.getElementById('inv-numberPlate').innerText = record.numberPlate;
-            document.getElementById('inv-currentKm').innerText = record.currentKm;
-            document.getElementById('inv-nextKm').innerText = record.nextKm;
+            
+            const status = getPaymentStatus(record);
+            const statusEl = document.getElementById('inv-status');
+            statusEl.innerText = status;
+            statusEl.className = status === 'paid' ? 'bg-emerald-100 text-emerald-800 px-3 py-1 rounded font-bold uppercase tracking-wider text-xs' : 'bg-amber-100 text-amber-800 px-3 py-1 rounded font-bold uppercase tracking-wider text-xs';
+
+            document.getElementById('inv-customerName').innerText = record.customerName; document.getElementById('inv-customerPhone').innerText = `Ph: ${record.customerPhone}`;
+            document.getElementById('inv-bikeModel').innerText = record.bikeModel; document.getElementById('inv-numberPlate').innerText = record.numberPlate;
+            document.getElementById('inv-currentKm').innerText = record.currentKm; document.getElementById('inv-nextKm').innerText = record.nextKm;
             document.getElementById('inv-workDone').innerText = record.workDone;
-            document.getElementById('inv-parts').innerText = getCostParts(record);
-            document.getElementById('inv-labour').innerText = getCostLabour(record);
-            document.getElementById('inv-cost').innerText = `Total: ₹${getCostTotal(record)}`;
-            document.getElementById('inv-total').innerText = `₹${getCostTotal(record)}`;
+            document.getElementById('inv-parts').innerText = getCostParts(record); document.getElementById('inv-labour').innerText = getCostLabour(record);
+            document.getElementById('inv-cost').innerText = `₹${getCostTotal(record)}`; document.getElementById('inv-total').innerText = `₹${getCostTotal(record)}`;
             document.getElementById('inv-method').innerText = getPaymentMethod(record);
 
             const element = document.getElementById('invoice-template');
-            const opt = { margin: 0, filename: `Invoice_${record.numberPlate}_${record.date.replace(/\//g, '-')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
-            const btn = document.getElementById('sd-pdf-btn'); const originalText = btn.innerHTML;
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin text-lg"></i> Generating PDF...`;
-            html2pdf().set(opt).from(element).save().then(() => { setTimeout(() => { btn.innerHTML = originalText; }, 1000); });
+            const opt = { margin: 0, filename: `${ownerData.workshopName}_Invoice_${record.numberPlate}_${record.date.replace(/\//g, '-')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
+            
+            const btn = document.getElementById(autoWhatsApp ? 'saveSendBtn' : 'sd-pdf-btn'); 
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin text-lg"></i> Generating Premium PDF...`;
+            
+            html2pdf().set(opt).from(element).save().then(() => { 
+                setTimeout(() => { 
+                    btn.innerHTML = originalText; 
+                    if(autoWhatsApp) {
+                        alert("✅ Premium PDF Downloaded!\nOpening WhatsApp... Please attach the downloaded PDF to the message.");
+                        sendWhatsApp(record);
+                        document.getElementById('serviceForm').reset();
+                        document.getElementById('costTotal').value = 0;
+                        switchView('dashboard');
+                    }
+                }, 800); 
+            });
         }
+
+        // Handle Save and Send workflow
+        function handleSaveAndSend() {
+            // Check form validity
+            if(!document.getElementById('serviceForm').checkValidity()) {
+                document.getElementById('realSubmitBtn').click(); // trigger native HTML5 validation UI
+                return;
+            }
+
+            const parts = Number(document.getElementById('costParts').value) || 0;
+            const labour = Number(document.getElementById('costLabour').value) || 0;
+            
+            const record = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString('en-IN'),
+                customerName: document.getElementById('customerName').value, customerPhone: document.getElementById('customerPhone').value,
+                bikeModel: document.getElementById('bikeModel').value, numberPlate: document.getElementById('numberPlate').value.toUpperCase(),
+                currentKm: document.getElementById('currentKm').value, nextKm: document.getElementById('nextKm').value,
+                workDone: document.getElementById('workDone').value,
+                cost_parts: parts, cost_labour: labour, cost_total: parts + labour,
+                payment_status: document.getElementById('paymentStatus').value, payment_method: document.getElementById('paymentMethod').value,
+                profit: labour
+            };
+            
+            services.unshift(record); saveData(); 
+            // Triggers PDF Download FIRST, then opens WhatsApp inside the promise
+            downloadPDF(record, true);
+        }
+
+        document.getElementById('serviceForm').addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            // Normal submit is hijacked by handleSaveAndSend, but if triggered via enter key:
+            handleSaveAndSend();
+        });
 
         function switchView(viewName) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
@@ -920,55 +970,24 @@
             
             const activeNav = document.getElementById(`nav-${viewName}`);
             if(activeNav) { activeNav.classList.add('text-black'); activeNav.classList.remove('text-gray-400'); }
-            else if (['revenue', 'edit', 'reminders', 'pending'].includes(viewName)) {
-                document.getElementById('nav-dashboard').classList.add('text-black'); document.getElementById('nav-dashboard').classList.remove('text-gray-400');
-            }
+            else if (['revenue', 'edit', 'reminders', 'pending'].includes(viewName)) { document.getElementById('nav-dashboard').classList.add('text-black'); document.getElementById('nav-dashboard').classList.remove('text-gray-400'); }
 
-            if(viewName === 'dashboard') renderDashboard();
-            if(viewName === 'history') renderHistory();
-            if(viewName === 'customers') renderCustomers();
-            if(viewName === 'revenue') renderRevenueDetails();
-            if(viewName === 'reminders') renderReminders();
-            if(viewName === 'pending') renderPending();
+            if(viewName === 'dashboard') renderDashboard(); if(viewName === 'history') renderHistory(); if(viewName === 'customers') renderCustomers();
+            if(viewName === 'revenue') renderRevenueDetails(); if(viewName === 'reminders') renderReminders(); if(viewName === 'pending') renderPending();
         }
-
-        document.getElementById('serviceForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const parts = Number(document.getElementById('costParts').value) || 0;
-            const labour = Number(document.getElementById('costLabour').value) || 0;
-            
-            const record = {
-                id: Date.now(),
-                date: new Date().toLocaleDateString('en-IN'),
-                customerName: document.getElementById('customerName').value,
-                customerPhone: document.getElementById('customerPhone').value,
-                bikeModel: document.getElementById('bikeModel').value,
-                numberPlate: document.getElementById('numberPlate').value.toUpperCase(),
-                currentKm: document.getElementById('currentKm').value,
-                nextKm: document.getElementById('nextKm').value,
-                workDone: document.getElementById('workDone').value,
-                
-                cost_parts: parts, cost_labour: labour, cost_total: parts + labour,
-                payment_status: document.getElementById('paymentStatus').value,
-                payment_method: document.getElementById('paymentMethod').value,
-                profit: labour
-            };
-            services.unshift(record); saveData(); sendWhatsApp(record); this.reset();
-            document.getElementById('costTotal').value = 0;
-            switchView('dashboard');
-        });
 
         document.getElementById('ownerForm').addEventListener('submit', function(e) {
             e.preventDefault();
             ownerData.workshopName = document.getElementById('set-workshopName').value; ownerData.adminName = document.getElementById('set-adminName').value;
             ownerData.phone = document.getElementById('set-phone').value; ownerData.taxId = document.getElementById('set-taxId').value;
             ownerData.email = document.getElementById('set-email').value; ownerData.address = document.getElementById('set-address').value;
+            ownerData.website = document.getElementById('set-website').value; ownerData.insta = document.getElementById('set-insta').value; ownerData.fb = document.getElementById('set-fb').value;
             localStorage.setItem('tmr_owner', JSON.stringify(ownerData)); initApp(); alert("Professional Profile updated successfully!");
         });
 
         function sendWhatsApp(record) {
             const pStatus = getPaymentStatus(record); const pMethod = getPaymentMethod(record);
-            const message = `*${ownerData.workshopName} - Service Summary*\n\nBike: ${record.bikeModel} (${record.numberPlate})\nKM: ${record.currentKm}\n\n*Work Done:*\n${record.workDone}\n\n*Cost Breakdown:*\n⚙️ Parts: ₹${getCostParts(record)}\n🛠️ Labour: ₹${getCostLabour(record)}\n💰 *Total: ₹${getCostTotal(record)}*\n\nStatus: ${pStatus.toUpperCase()} ${pStatus === 'paid' ? '✅' : '⏳'}\nMethod: ${pMethod.toUpperCase()}\n\n⚠️ *Next Service due at ${record.nextKm} KM*\n\nThank you for visiting!`;
+            const message = `*${ownerData.workshopName} - Service Summary*\n\nHello ${record.customerName},\nThank you for choosing us! Attached is your premium PDF invoice for the recent service on your ${record.bikeModel} (${record.numberPlate}).\n\n*Quick Summary:*\n💰 Total: ₹${getCostTotal(record)}\nStatus: ${pStatus.toUpperCase()} ${pStatus === 'paid' ? '✅' : '⏳'}\n\n⚠️ *Reminder:* Next service due at ${record.nextKm} KM.\n\nDrive Safe!`;
             window.open(`https://wa.me/91${record.customerPhone}?text=${encodeURIComponent(message)}`, '_blank');
         }
 
@@ -977,7 +996,7 @@
         }
 
         function sendReminderWhatsApp(phone, name, model, plate) {
-            const message = `*${ownerData.workshopName} - Service Reminder*\n\nHello ${name},\nIt has been a while since your ${model} (${plate}) was last serviced with us.\n\nRegular servicing keeps your vehicle safe and running smoothly. \n\nPlease visit us soon for a quick checkup!\n\nRegards,\n${ownerData.adminName}`;
+            const message = `*${ownerData.workshopName} - Maintenance Alert*\n\nHello ${name},\nIt has been a while since your ${model} (${plate}) was last serviced.\n\nRegular servicing keeps your vehicle safe and prevents costly repairs. \n\nPlease visit us soon for a quick checkup!\n\nRegards,\n${ownerData.adminName}`;
             window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(message)}`, '_blank');
         }
 
@@ -988,21 +1007,16 @@
             document.getElementById('edit-bikeModel').value = record.bikeModel; document.getElementById('edit-numberPlate').value = record.numberPlate;
             document.getElementById('edit-currentKm').value = record.currentKm; document.getElementById('edit-nextKm').value = record.nextKm;
             document.getElementById('edit-workDone').value = record.workDone;
-            
-            document.getElementById('edit-costParts').value = getCostParts(record);
-            document.getElementById('edit-costLabour').value = getCostLabour(record);
-            document.getElementById('edit-costTotal').value = getCostTotal(record);
-            document.getElementById('edit-paymentStatus').value = getPaymentStatus(record);
+            document.getElementById('edit-costParts').value = getCostParts(record); document.getElementById('edit-costLabour').value = getCostLabour(record);
+            document.getElementById('edit-costTotal').value = getCostTotal(record); document.getElementById('edit-paymentStatus').value = getPaymentStatus(record);
             document.getElementById('edit-paymentMethod').value = getPaymentMethod(record);
-            
             switchView('edit');
         }
 
         document.getElementById('editForm').addEventListener('submit', function(e) {
             e.preventDefault(); const id = parseInt(document.getElementById('edit-id').value); const index = services.findIndex(r => r.id === id);
             if(index !== -1) {
-                const parts = Number(document.getElementById('edit-costParts').value) || 0;
-                const labour = Number(document.getElementById('edit-costLabour').value) || 0;
+                const parts = Number(document.getElementById('edit-costParts').value) || 0; const labour = Number(document.getElementById('edit-costLabour').value) || 0;
                 services[index] = {
                     id: id, date: document.getElementById('edit-date').value,
                     customerName: document.getElementById('edit-customerName').value, customerPhone: document.getElementById('edit-customerPhone').value,
@@ -1010,25 +1024,18 @@
                     currentKm: document.getElementById('edit-currentKm').value, nextKm: document.getElementById('edit-nextKm').value,
                     workDone: document.getElementById('edit-workDone').value,
                     cost_parts: parts, cost_labour: labour, cost_total: parts + labour,
-                    payment_status: document.getElementById('edit-paymentStatus').value,
-                    payment_method: document.getElementById('edit-paymentMethod').value, profit: labour
+                    payment_status: document.getElementById('edit-paymentStatus').value, payment_method: document.getElementById('edit-paymentMethod').value, profit: labour
                 };
                 saveData(); alert("Service updated!"); switchView('history');
             }
         });
 
-        function deleteEditingRecord() {
-            if(confirm("Are you sure you want to delete this specific service record? This cannot be undone.")) {
-                const id = parseInt(document.getElementById('edit-id').value); services = services.filter(r => r.id !== id); saveData(); switchView('history');
-            }
-        }
-
+        function deleteEditingRecord() { if(confirm("Are you sure you want to delete this specific service record? This cannot be undone.")) { const id = parseInt(document.getElementById('edit-id').value); services = services.filter(r => r.id !== id); saveData(); switchView('history'); } }
         function parseDateIndia(dateStr) { const parts = dateStr.split(/[\/\-]/); if(parts.length !== 3) return new Date(); return new Date(parts[2], parts[1] - 1, parts[0]); }
 
         // --- Rendering ---
         function renderDashboard() {
             document.getElementById('stat-total-services').innerText = services.length;
-            
             let totalRev = 0, monthRev = 0, totalProfit = 0, pendingCount = 0, pendingAmount = 0;
             const todayStr = new Date().toLocaleDateString('en-IN'); const currentMonth = new Date().getMonth(); const currentYear = new Date().getFullYear();
 
@@ -1039,41 +1046,26 @@
                 if(parts.length === 3 && (parseInt(parts[1]) - 1) === currentMonth && parseInt(parts[2]) === currentYear) monthRev += cost;
             });
 
-            document.getElementById('stat-revenue').innerText = `₹${totalRev.toLocaleString('en-IN')}`;
-            document.getElementById('stat-month-revenue').innerText = `₹${monthRev.toLocaleString('en-IN')}`;
-            document.getElementById('stat-total-profit').innerText = `₹${totalProfit.toLocaleString('en-IN')}`;
+            document.getElementById('stat-revenue').innerText = `₹${totalRev.toLocaleString('en-IN')}`; document.getElementById('stat-month-revenue').innerText = `₹${monthRev.toLocaleString('en-IN')}`; document.getElementById('stat-total-profit').innerText = `₹${totalProfit.toLocaleString('en-IN')}`;
 
             const pendingBanner = document.getElementById('pending-payments-banner');
-            if(pendingCount > 0) {
-                document.getElementById('pending-count').innerText = pendingCount;
-                document.getElementById('pending-amount').innerText = pendingAmount.toLocaleString('en-IN');
-                pendingBanner.classList.remove('hidden');
-            } else { pendingBanner.classList.add('hidden'); }
+            if(pendingCount > 0) { document.getElementById('pending-count').innerText = pendingCount; document.getElementById('pending-amount').innerText = pendingAmount.toLocaleString('en-IN'); pendingBanner.classList.remove('hidden'); } else { pendingBanner.classList.add('hidden'); }
 
             const uniqueMap = new Map(); services.forEach(r => { if(!uniqueMap.has(r.numberPlate)) uniqueMap.set(r.numberPlate, r); });
             const now = new Date(); let dueCount = 0;
-            uniqueMap.forEach(record => {
-                const rDate = parseDateIndia(record.date);
-                if((now - rDate) / (1000 * 60 * 60 * 24) > 90) dueCount++;
-            });
+            uniqueMap.forEach(record => { const rDate = parseDateIndia(record.date); if((now - rDate) / (1000 * 60 * 60 * 24) > 90) dueCount++; });
             const reminderBanner = document.getElementById('due-reminders-banner');
             if(dueCount > 0) { document.getElementById('due-count').innerText = dueCount; reminderBanner.classList.remove('hidden'); } else { reminderBanner.classList.add('hidden'); }
 
             const recentList = document.getElementById('recent-list'); recentList.innerHTML = ''; const recentServices = services.slice(0, 3);
             if (recentServices.length === 0) { recentList.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">No services yet.</p>`; return; }
             recentServices.forEach(record => {
-                const badge = getPaymentStatus(record) === 'paid' ? `<div class="w-2 h-2 rounded-full bg-green-500 absolute top-2 right-2"></div>` : `<div class="w-2 h-2 rounded-full bg-yellow-500 absolute top-2 right-2"></div>`;
+                const badge = getPaymentStatus(record) === 'paid' ? `<div class="w-2 h-2 rounded-full bg-green-500 absolute top-2 right-2 shadow-sm"></div>` : `<div class="w-2 h-2 rounded-full bg-yellow-500 absolute top-2 right-2 shadow-sm"></div>`;
                 recentList.innerHTML += `
                     <div onclick="openServiceDetails(${record.id})" class="cursor-pointer bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center hover:shadow-md hover:border-gray-200 transition-all group relative">
                         ${badge}
-                        <div>
-                            <p class="font-bold text-gray-800 group-hover:text-black">${record.numberPlate}</p>
-                            <p class="text-xs text-gray-500">${record.bikeModel}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-bold text-gray-800">₹${getCostTotal(record)}</p>
-                            <p class="text-[10px] text-gray-400">${record.date}</p>
-                        </div>
+                        <div><p class="font-bold text-gray-800 group-hover:text-black">${record.numberPlate}</p><p class="text-xs text-gray-500">${record.bikeModel}</p></div>
+                        <div class="text-right"><p class="font-bold text-gray-800">₹${getCostTotal(record)}</p><p class="text-[10px] text-gray-400">${record.date}</p></div>
                     </div>
                 `;
             });
@@ -1083,24 +1075,14 @@
             const list = document.getElementById('reminders-list'); list.innerHTML = '';
             const uniqueMap = new Map(); services.forEach(r => { if(!uniqueMap.has(r.numberPlate)) uniqueMap.set(r.numberPlate, r); });
             const now = new Date(); const dueList = [];
-            uniqueMap.forEach(record => {
-                const rDate = parseDateIndia(record.date); const diffDays = Math.floor((now - rDate) / (1000 * 60 * 60 * 24));
-                if(diffDays > 90) dueList.push({...record, daysAgo: diffDays});
-            });
+            uniqueMap.forEach(record => { const rDate = parseDateIndia(record.date); const diffDays = Math.floor((now - rDate) / (1000 * 60 * 60 * 24)); if(diffDays > 90) dueList.push({...record, daysAgo: diffDays}); });
             dueList.sort((a,b) => b.daysAgo - a.daysAgo);
             if(dueList.length === 0) { list.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">All customers are up to date!</p>`; return; }
 
             dueList.forEach(c => {
                 list.innerHTML += `
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-red-100 flex items-center justify-between">
-                        <div>
-                            <p class="font-bold text-gray-900 text-sm mb-0.5">${c.customerName}</p>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">${c.numberPlate}</span>
-                                <span class="text-xs text-gray-500">${c.bikeModel}</span>
-                            </div>
-                            <p class="text-[10px] text-red-500 font-bold"><i class="fas fa-clock mr-1"></i>Last Service: ${c.daysAgo} days ago</p>
-                        </div>
+                        <div><p class="font-bold text-gray-900 text-sm mb-0.5">${c.customerName}</p><div class="flex items-center gap-2 mb-1"><span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">${c.numberPlate}</span><span class="text-xs text-gray-500">${c.bikeModel}</span></div><p class="text-[10px] text-red-500 font-bold"><i class="fas fa-clock mr-1"></i>Last Service: ${c.daysAgo} days ago</p></div>
                         <button onclick="sendReminderWhatsApp('${c.customerPhone}', '${c.customerName}', '${c.bikeModel}', '${c.numberPlate}')" class="w-10 h-10 bg-red-50 text-red-600 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition shadow-sm border border-red-100"><i class="fab fa-whatsapp text-lg"></i></button>
                     </div>
                 `;
@@ -1115,14 +1097,7 @@
             pendingList.forEach(c => {
                 list.innerHTML += `
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-yellow-200 flex items-center justify-between">
-                        <div>
-                            <p class="font-bold text-gray-900 text-sm mb-0.5">${c.customerName}</p>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">${c.numberPlate}</span>
-                                <span class="text-xs text-gray-500">${c.date}</span>
-                            </div>
-                            <p class="text-sm text-yellow-700 font-black">₹${getCostTotal(c)}</p>
-                        </div>
+                        <div><p class="font-bold text-gray-900 text-sm mb-0.5">${c.customerName}</p><div class="flex items-center gap-2 mb-1"><span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">${c.numberPlate}</span><span class="text-xs text-gray-500">${c.date}</span></div><p class="text-sm text-yellow-700 font-black">₹${getCostTotal(c)}</p></div>
                         <div class="flex gap-2">
                             <button onclick="quickWhatsApp('${c.customerPhone}', '${c.customerName}')" class="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center hover:bg-green-500 hover:text-white transition shadow-sm border border-green-100"><i class="fab fa-whatsapp text-lg"></i></button>
                             <button onclick="openServiceDetails(${c.id})" class="w-10 h-10 bg-gray-50 text-gray-600 rounded-full flex items-center justify-center hover:bg-black hover:text-white transition shadow-sm border border-gray-200"><i class="fas fa-eye text-sm"></i></button>
@@ -1134,8 +1109,7 @@
 
         function renderRevenueDetails() {
             let todayRev = 0, todayCount = 0, weekRev = 0, weekCount = 0, monthRev = 0, monthCount = 0, yearRev = 0, yearCount = 0, allTimeRev = 0, allTimeCount = services.length;
-            const now = new Date(); const tDay = now.getDate(); const tMonth = now.getMonth(); const tYear = now.getFullYear();
-            const todayStart = new Date(tYear, tMonth, tDay);
+            const now = new Date(); const tDay = now.getDate(); const tMonth = now.getMonth(); const tYear = now.getFullYear(); const todayStart = new Date(tYear, tMonth, tDay);
 
             services.forEach(record => {
                 const cost = getCostTotal(record); allTimeRev += cost;
@@ -1156,46 +1130,16 @@
 
             document.getElementById('revenue-insights-content').innerHTML = `
                 <div class="bg-gradient-to-br from-[#25D366] to-green-700 text-white p-6 rounded-3xl shadow-lg mb-4 relative overflow-hidden">
-                    <i class="fas fa-chart-pie absolute -right-4 -bottom-4 text-8xl opacity-10"></i>
-                    <p class="text-green-100 text-xs font-bold uppercase tracking-wider mb-1">Total All-Time</p>
-                    <h3 class="text-4xl font-black mb-3">₹${allTimeRev.toLocaleString('en-IN')}</h3>
-                    <div class="inline-flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg text-sm font-semibold backdrop-blur-sm">
-                        <i class="fas fa-wrench"></i> ${allTimeCount} Total Services
-                    </div>
+                    <i class="fas fa-chart-pie absolute -right-4 -bottom-4 text-8xl opacity-10"></i><p class="text-green-100 text-xs font-bold uppercase tracking-wider mb-1">Total All-Time</p><h3 class="text-4xl font-black mb-3">₹${allTimeRev.toLocaleString('en-IN')}</h3>
+                    <div class="inline-flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg text-sm font-semibold backdrop-blur-sm"><i class="fas fa-wrench"></i> ${allTimeCount} Total Services</div>
                 </div>
                 <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
-                        <div class="w-8 h-8 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center absolute top-4 right-4"><i class="fas fa-calendar-day text-xs"></i></div>
-                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Today</p>
-                        <h4 class="text-xl font-black text-gray-900">₹${todayRev.toLocaleString('en-IN')}</h4>
-                        <p class="text-[10px] text-gray-400 mt-2 font-semibold">${todayCount} Services</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
-                        <div class="w-8 h-8 bg-purple-50 text-purple-500 rounded-full flex items-center justify-center absolute top-4 right-4"><i class="fas fa-calendar-week text-xs"></i></div>
-                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Last 7 Days</p>
-                        <h4 class="text-xl font-black text-gray-900">₹${weekRev.toLocaleString('en-IN')}</h4>
-                        <p class="text-[10px] text-gray-400 mt-2 font-semibold">${weekCount} Services</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
-                        <div class="w-8 h-8 bg-pink-50 text-pink-500 rounded-full flex items-center justify-center absolute top-4 right-4"><i class="fas fa-calendar-alt text-xs"></i></div>
-                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">This Month</p>
-                        <h4 class="text-xl font-black text-gray-900">₹${monthRev.toLocaleString('en-IN')}</h4>
-                        <p class="text-[10px] text-gray-400 mt-2 font-semibold">${monthCount} Services</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
-                        <div class="w-8 h-8 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center absolute top-4 right-4"><i class="fas fa-users text-xs"></i></div>
-                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Repeat Rate</p>
-                        <h4 class="text-xl font-black text-gray-900">${repeatRate}%</h4>
-                        <p class="text-[10px] text-gray-400 mt-2 font-semibold">Returning Customers</p>
-                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden"><div class="w-8 h-8 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center absolute top-4 right-4"><i class="fas fa-calendar-day text-xs"></i></div><p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Today</p><h4 class="text-xl font-black text-gray-900">₹${todayRev.toLocaleString('en-IN')}</h4><p class="text-[10px] text-gray-400 mt-2 font-semibold">${todayCount} Services</p></div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden"><div class="w-8 h-8 bg-purple-50 text-purple-500 rounded-full flex items-center justify-center absolute top-4 right-4"><i class="fas fa-calendar-week text-xs"></i></div><p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Last 7 Days</p><h4 class="text-xl font-black text-gray-900">₹${weekRev.toLocaleString('en-IN')}</h4><p class="text-[10px] text-gray-400 mt-2 font-semibold">${weekCount} Services</p></div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden"><div class="w-8 h-8 bg-pink-50 text-pink-500 rounded-full flex items-center justify-center absolute top-4 right-4"><i class="fas fa-calendar-alt text-xs"></i></div><p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">This Month</p><h4 class="text-xl font-black text-gray-900">₹${monthRev.toLocaleString('en-IN')}</h4><p class="text-[10px] text-gray-400 mt-2 font-semibold">${monthCount} Services</p></div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden"><div class="w-8 h-8 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center absolute top-4 right-4"><i class="fas fa-users text-xs"></i></div><p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Repeat Rate</p><h4 class="text-xl font-black text-gray-900">${repeatRate}%</h4><p class="text-[10px] text-gray-400 mt-2 font-semibold">Returning Customers</p></div>
                 </div>
-                <div class="bg-gradient-to-r from-gray-900 to-black p-5 rounded-2xl shadow-md flex items-center justify-between text-white">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-gray-800 text-gray-300 rounded-full flex items-center justify-center border border-gray-700"><i class="fas fa-calculator text-lg"></i></div>
-                        <div><p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Avg. Order Value</p><p class="text-xs text-gray-500 mt-0.5">Per Service Average</p></div>
-                    </div>
-                    <h4 class="text-2xl font-black text-white">₹${avgRev.toLocaleString('en-IN')}</h4>
-                </div>
+                <div class="bg-gradient-to-r from-gray-900 to-black p-5 rounded-2xl shadow-md flex items-center justify-between text-white"><div class="flex items-center gap-4"><div class="w-12 h-12 bg-gray-800 text-gray-300 rounded-full flex items-center justify-center border border-gray-700"><i class="fas fa-calculator text-lg"></i></div><div><p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Avg. Order Value</p><p class="text-xs text-gray-500 mt-0.5">Per Service Average</p></div></div><h4 class="text-2xl font-black text-white">₹${avgRev.toLocaleString('en-IN')}</h4></div>
             `;
         }
 
@@ -1205,30 +1149,17 @@
             if (filtered.length === 0) { historyList.innerHTML = `<p class="text-sm text-gray-500 ml-4">No records found.</p>`; return; }
 
             filtered.forEach(record => {
-                const statusHtml = getPaymentStatus(record) === 'paid' 
-                    ? `<span class="bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Paid</span>` 
-                    : `<span class="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Pending</span>`;
-
+                const statusHtml = getPaymentStatus(record) === 'paid' ? `<span class="bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Paid</span>` : `<span class="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Pending</span>`;
                 historyList.innerHTML += `
                     <div class="relative pl-6">
                         <div class="absolute w-3 h-3 bg-black rounded-full -left-[7px] top-1.5 border-2 border-white shadow-sm"></div>
                         <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
                             <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <span class="bg-gray-100 text-gray-800 text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wide mr-1">${record.numberPlate}</span>
-                                    ${statusHtml}
-                                    <p class="text-sm font-bold mt-1.5">${record.customerName}</p>
-                                </div>
-                                <div class="text-right flex flex-col items-end">
-                                    <p class="text-[10px] font-semibold text-gray-400">${record.date}</p>
-                                    <button onclick="editRecord(${record.id})" class="mt-1 w-7 h-7 bg-gray-50 text-gray-600 rounded-full flex items-center justify-center hover:bg-gray-200 transition"><i class="fas fa-pencil-alt text-xs"></i></button>
-                                </div>
+                                <div><span class="bg-gray-100 text-gray-800 text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wide mr-1">${record.numberPlate}</span>${statusHtml}<p class="text-sm font-bold mt-1.5">${record.customerName}</p></div>
+                                <div class="text-right flex flex-col items-end"><p class="text-[10px] font-semibold text-gray-400">${record.date}</p><button onclick="editRecord(${record.id})" class="mt-1 w-7 h-7 bg-gray-50 text-gray-600 rounded-full flex items-center justify-center hover:bg-gray-200 transition"><i class="fas fa-pencil-alt text-xs"></i></button></div>
                             </div>
                             <p class="text-sm text-gray-600 mb-3 bg-gray-50 p-2 rounded-lg"><strong>Work:</strong> ${record.workDone}</p>
-                            <div class="flex justify-between items-center border-t border-gray-100 pt-3">
-                                <p class="text-xs text-red-500 font-semibold"><i class="fas fa-bell mr-1"></i> Next: ${record.nextKm} KM</p>
-                                <p class="text-sm font-bold text-gray-900">₹${getCostTotal(record)}</p>
-                            </div>
+                            <div class="flex justify-between items-center border-t border-gray-100 pt-3"><p class="text-xs text-red-500 font-semibold"><i class="fas fa-bell mr-1"></i> Next: ${record.nextKm} KM</p><p class="text-sm font-bold text-gray-900">₹${getCostTotal(record)}</p></div>
                         </div>
                     </div>
                 `;
@@ -1245,26 +1176,14 @@
             uniqueCustomers.forEach(c => {
                 list.innerHTML += `
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md transition">
-                        <div>
-                            <p class="font-bold text-gray-900 text-sm mb-0.5">${c.customerName}</p>
-                            <div class="flex items-center gap-2">
-                                <span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">${c.numberPlate}</span>
-                                <span class="text-xs text-gray-500">${c.bikeModel}</span>
-                            </div>
-                            <p class="text-xs text-gray-400 mt-1"><i class="fas fa-phone text-[10px] mr-1"></i>${c.customerPhone}</p>
-                        </div>
-                        <button onclick="quickWhatsApp('${c.customerPhone}', '${c.customerName}')" class="w-10 h-10 bg-[#25D366] text-white rounded-full shadow-sm flex items-center justify-center hover:bg-[#1ebe57] transition">
-                            <i class="fab fa-whatsapp text-lg"></i>
-                        </button>
+                        <div><p class="font-bold text-gray-900 text-sm mb-0.5">${c.customerName}</p><div class="flex items-center gap-2"><span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">${c.numberPlate}</span><span class="text-xs text-gray-500">${c.bikeModel}</span></div><p class="text-xs text-gray-400 mt-1"><i class="fas fa-phone text-[10px] mr-1"></i>${c.customerPhone}</p></div>
+                        <button onclick="quickWhatsApp('${c.customerPhone}', '${c.customerName}')" class="w-10 h-10 bg-[#25D366] text-white rounded-full shadow-sm flex items-center justify-center hover:bg-[#1ebe57] transition"><i class="fab fa-whatsapp text-lg"></i></button>
                     </div>
                 `;
             });
         }
 
-        function saveData() { 
-            localStorage.setItem('tmr_services', JSON.stringify(services)); 
-            updateNotificationBadge();
-        }
+        function saveData() { localStorage.setItem('tmr_services', JSON.stringify(services)); updateNotificationBadge(); }
         function exportData() {
             if(services.length === 0) return alert("No data to export!"); const dataStr = JSON.stringify(services);
             const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
@@ -1283,4 +1202,4 @@
         renderDashboard();
     </script>
 </body>
-                                                     </html>
+    </html>
